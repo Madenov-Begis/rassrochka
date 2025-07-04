@@ -1,0 +1,102 @@
+import { Injectable, NotFoundException } from "@nestjs/common"
+import { PrismaService } from "../../../prisma/prisma.service"
+
+@Injectable()
+export class PaymentsService {
+  constructor(private prisma: PrismaService) {}
+
+  async findOne(storeId: string, id: string) {
+    const payment = await this.prisma.payment.findFirst({
+      where: {
+        id,
+        installment: { storeId },
+      },
+      include: {
+        installment: {
+          include: {
+            customer: true,
+          },
+        },
+      },
+    })
+
+    if (!payment) {
+      throw new NotFoundException("Payment not found")
+    }
+
+    return payment
+  }
+
+  async markPaid(storeId: string, id: string) {
+    const payment = await this.prisma.payment.findFirst({
+      where: {
+        id,
+        installment: { storeId },
+      },
+    })
+
+    if (!payment) {
+      throw new NotFoundException("Payment not found")
+    }
+
+    return this.prisma.payment.update({
+      where: { id },
+      data: {
+        status: "paid",
+        paidDate: new Date(),
+      },
+    })
+  }
+
+  async getOverdue(storeId: string) {
+    return this.prisma.payment.findMany({
+      where: {
+        installment: { storeId },
+        status: "pending",
+        dueDate: { lt: new Date() },
+      },
+      include: {
+        installment: {
+          include: {
+            customer: true,
+          },
+        },
+      },
+      orderBy: { dueDate: "asc" },
+    })
+  }
+
+  async getUpcoming(storeId: string) {
+    const nextWeek = new Date()
+    nextWeek.setDate(nextWeek.getDate() + 7)
+
+    return this.prisma.payment.findMany({
+      where: {
+        installment: { storeId },
+        status: "pending",
+        dueDate: {
+          gte: new Date(),
+          lte: nextWeek,
+        },
+      },
+      include: {
+        installment: {
+          include: {
+            customer: true,
+          },
+        },
+      },
+      orderBy: { dueDate: "asc" },
+    })
+  }
+
+  async getByInstallment(storeId: string, installmentId: string) {
+    return this.prisma.payment.findMany({
+      where: {
+        installmentId,
+        installment: { storeId },
+      },
+      orderBy: { dueDate: "asc" },
+    })
+  }
+}

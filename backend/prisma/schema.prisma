@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  login     String   @unique
+  password  String
+  role      Role
+  storeId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  store     Store?   @relation(fields: [storeId], references: [id])
+  status    UserStatus @default(active)
+
+  @@map("users")
+}
+
+model Store {
+  id           String        @id @default(cuid())
+  name         String
+  address      String
+  phone        String
+  status       StoreStatus   @default(active)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  customers    Customer[]
+  installments Installment[]
+  users        User[]
+
+  @@map("stores")
+}
+
+model Customer {
+  id             String        @id @default(cuid())
+  firstName      String
+  lastName       String
+  middleName     String?
+  passportSeries String
+  passportNumber String
+  phone          String
+  address        String
+  isBlacklisted  Boolean       @default(false)
+  storeId        String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  store          Store         @relation(fields: [storeId], references: [id])
+  installments   Installment[]
+  blacklistEntry Blacklist?
+
+  @@unique([passportSeries, passportNumber])
+  @@map("customers")
+}
+
+model Installment {
+  id             String            @id @default(cuid())
+  productName    String
+  productPrice   Decimal           @db.Decimal(10, 2)
+  downPayment    Decimal           @db.Decimal(10, 2)
+  interestRate   Decimal           @db.Decimal(5, 2)
+  months         Int
+  totalAmount    Decimal           @db.Decimal(10, 2)
+  monthlyPayment Decimal           @db.Decimal(10, 2)
+  status         InstallmentStatus @default(active)
+  customerId     String
+  storeId        String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  customer       Customer          @relation(fields: [customerId], references: [id])
+  store          Store             @relation(fields: [storeId], references: [id])
+  payments       Payment[]
+
+  @@map("installments")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  amount        Decimal       @db.Decimal(10, 2)
+  dueDate       DateTime
+  paidDate      DateTime?
+  status        PaymentStatus @default(pending)
+  installmentId String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  installment   Installment   @relation(fields: [installmentId], references: [id])
+
+  @@map("payments")
+}
+
+model Blacklist {
+  id             String   @id @default(cuid())
+  passportSeries String
+  passportNumber String
+  reason         String
+  addedAt        DateTime @default(now())
+  addedByUserId  String
+  customerId     String?  @unique
+  customer       Customer? @relation(fields: [customerId], references: [id])
+
+  @@unique([passportSeries, passportNumber])
+  @@map("blacklist")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String?
+  entityId  String?
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+enum Role {
+  admin
+  store_manager
+}
+
+enum StoreStatus {
+  active
+  payment_overdue
+  blocked
+}
+
+enum InstallmentStatus {
+  active
+  completed
+  overdue
+  early_payoff
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  overdue
+  cancelled
+}
+
+enum UserStatus {
+  active
+  inactive
+  blocked
+}
