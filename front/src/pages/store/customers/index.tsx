@@ -11,15 +11,48 @@ import { useQuery } from "@tanstack/react-query"
 import { customersApi } from "@/services/api"
 import { CreateCustomerForm } from "@/components/forms/create-customer-form"
 import { Pagination as ServerPagination } from "@/components/pagination"
+import { useDebounce } from "@/hooks/use-debounce"
+
+interface CustomerWithStoreAndInstallments {
+  id: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  isBlacklisted: boolean;
+  store?: { name: string };
+  installments?: { status: string }[];
+}
 
 export default function CustomersPage() {
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
+  // Глобальный поиск по паспорту
+  const [globalPassportSeries, setGlobalPassportSeries] = useState("")
+  const [globalPassportNumber, setGlobalPassportNumber] = useState("")
+  const [globalPassportTouched, setGlobalPassportTouched] = useState(false)
+  const [globalPassportError, setGlobalPassportError] = useState("")
+  const [globalPassportQuery, setGlobalPassportQuery] = useState("")
+
+  const debouncedSearch = useDebounce(search, 400)
+
   const { data: customers, isLoading } = useQuery({
-    queryKey: ["customers", { search, page }],
-    queryFn: () => customersApi.getAll({ search, page }),
+    queryKey: ["customers", { search: debouncedSearch, page }],
+    queryFn: () => customersApi.getAll({ search: debouncedSearch, page }),
+  })
+
+  const {
+    data: globalPassportResults,
+    isLoading: isGlobalPassportLoading,
+    refetch: refetchGlobalPassport,
+  } = useQuery< CustomerWithStoreAndInstallments[] | null >({
+    queryKey: ["customers-global-passport", globalPassportQuery],
+    queryFn: async () => {
+      if (!globalPassportQuery) return null
+      return customersApi.searchByPassportGlobal(globalPassportQuery)
+    },
+    enabled: !!globalPassportQuery,
   })
 
   const getCustomerStatus = (customer: any) => {
@@ -33,6 +66,22 @@ export default function CustomersPage() {
     }
 
     return <Badge className="bg-green-100 text-green-800">Активен</Badge>
+  }
+
+  const handleGlobalPassportSearch = () => {
+    setGlobalPassportTouched(true)
+    // Валидация: серия — 2 латинские буквы, номер — 7 цифр
+    if (!/^[A-Z]{2}$/i.test(globalPassportSeries)) {
+      setGlobalPassportError("Серия паспорта: 2 латинские буквы")
+      return
+    }
+    if (!/^\d{7}$/.test(globalPassportNumber)) {
+      setGlobalPassportError("Номер паспорта: 7 цифр")
+      return
+    }
+    setGlobalPassportError("")
+    setGlobalPassportQuery(`${globalPassportSeries.toUpperCase()} ${globalPassportNumber}`)
+    refetchGlobalPassport()
   }
 
   return (
@@ -106,6 +155,65 @@ export default function CustomersPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Глобальный поиск по паспорту */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Глобальный поиск по паспорту (по всем магазинам)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row gap-2 items-end">
+              <div>
+                <Input
+                  placeholder="Серия (AA)"
+                  value={globalPassportSeries}
+                  maxLength={2}
+                  onChange={e => setGlobalPassportSeries(e.target.value.toUpperCase())}
+                  className="w-24"
+                />
+              </div>
+              <div>
+                <Input
+                  placeholder="Номер (1234567)"
+                  value={globalPassportNumber}
+                  maxLength={7}
+                  onChange={e => setGlobalPassportNumber(e.target.value.replace(/\D/g, ""))}
+                  className="w-32"
+                />
+              </div>
+              <Button onClick={handleGlobalPassportSearch}>
+                Проверить
+              </Button>
+            </div>
+            {globalPassportTouched && globalPassportError && (
+              <p className="text-sm text-red-600 mt-2">{globalPassportError}</p>
+            )}
+            {/* Результаты поиска */}
+            {isGlobalPassportLoading && <p className="mt-2">Поиск...</p>}
+            {globalPassportResults && (
+              <div className="mt-4 space-y-2">
+                {globalPassportResults.length === 0 ? (
+                  <p className="text-green-700">Клиент с таким паспортом не найден ни в одном магазине.</p>
+                ) : (
+                  <>
+                    <p className="font-semibold">Найдено в магазинах:</p>
+                    <ul className="space-y-1">
+                      {globalPassportResults.map((c) => (
+                        <li key={c.id} className="border rounded p-2 flex flex-col md:flex-row md:items-center gap-2">
+                          <span className="font-medium">{c.lastName} {c.firstName} {c.middleName} ({c.store?.name})</span>
+                          {c.isBlacklisted && <Badge className="bg-red-100 text-red-800 ml-2">Чёрный список</Badge>}
+                          {c.installments?.some((i) => i.status === "overdue") && (
+                            <Badge className="bg-yellow-100 text-yellow-800 ml-2">Есть просрочки</Badge>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Search */}
         <Card>

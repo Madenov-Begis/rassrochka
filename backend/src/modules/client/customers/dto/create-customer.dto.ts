@@ -15,10 +15,12 @@ export class CreateCustomerDto {
 
   @IsString()
   @IsNotEmpty()
+  @Matches(/^[A-Z]{2}$/i, { message: 'Серия паспорта должна состоять из 2 латинских букв' })
   passportSeries: string
 
   @IsString()
   @IsNotEmpty()
+  @Matches(/^\d{7}$/, { message: 'Номер паспорта должен состоять из 7 цифр' })
   passportNumber: string
 
   @IsString()

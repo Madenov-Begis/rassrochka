@@ -85,6 +85,8 @@ export const customersApi = {
     api.put(`api/client/customers/${id}/blacklist`, { isBlacklisted }).then((r) => r.data),
   searchByPassport: (passport: string) =>
     api.get(`api/client/customers/search`, { params: { passport } }).then((r) => r.data),
+  searchByPassportGlobal: (passport: string) =>
+    api.get(`api/client/customers/search-global`, { params: { passport } }).then((r) => r.data),
 }
 
 export const installmentsApi = {

@@ -69,7 +69,7 @@ export class InstallmentsService {
 
     const where: any = { storeId }
 
-    if (status) {
+    if (status && status !== 'all') {
       where.status = status
     }
 

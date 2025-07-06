@@ -28,6 +28,11 @@ export class CustomersController {
     return this.customersService.searchByPassport(req.user.storeId, passport)
   }
 
+  @Get("search-global")
+  async searchByPassportGlobal(@Query('passport') passport: string) {
+    return this.customersService.searchByPassportGlobal(passport)
+  }
+
   @Get(":id")
   async findOne(@Req() req: any, @Param('id') id: string) {
     return this.customersService.findOne(req.user.storeId, id)

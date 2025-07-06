@@ -99,6 +99,22 @@ export class CustomersService {
     })
   }
 
+  async searchByPassportGlobal(passport: string) {
+    const [series, number] = passport.split(" ")
+
+    return this.prisma.customer.findMany({
+      where: {
+        passportSeries: series,
+        passportNumber: number,
+      },
+      include: {
+        installments: true,
+        blacklistEntry: true,
+        store: true,
+      },
+    })
+  }
+
   async updateBlacklist(storeId: string, id: string, isBlacklisted: boolean) {
     const customer = await this.prisma.customer.findFirst({
       where: { id, storeId },
