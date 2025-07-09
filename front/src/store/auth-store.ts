@@ -52,7 +52,7 @@ export const useAuthStore = create<AuthState>()(
             throw new Error(error.message || "Ошибка авторизации")
           }
 
-          const data = await response.json()
+          const {data} = await response.json()
 
           set({
             user: data.user,

@@ -1,50 +1,55 @@
--- Создание тестовых данных для системы рассрочки
-
+-- seed_fixed.sql (UTF-8)
+-- Очистка всех таблиц в правильном порядке
 DELETE FROM payments;
 DELETE FROM installments;
 DELETE FROM customers;
 DELETE FROM users;
 DELETE FROM stores;
 
--- Создание магазинов
-INSERT INTO stores (id, name, address, phone, status, "createdAt", "updatedAt") VALUES
-('store1', 'Электроника Центр', 'ул. Ленина, 45', '+7 (495) 123-45-67', 'active', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('store2', 'ТехноМир', 'пр. Мира, 123', '+7 (495) 987-65-43', 'payment_overdue', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('store3', 'Цифровой Дом', 'ул. Советская, 78', '+7 (495) 555-12-34', 'blocked', '2025-07-02 10:22:02', '2025-07-02 10:22:02');
+-- Вставка магазинов
+INSERT INTO stores (name, address, phone, status, "createdAt", "updatedAt") VALUES
+('Elektronika Center', 'ulitsa Lenina, 45', '+998 (90) 123-45-67', 'active', NOW(), NOW()),
+('TechnoMir', 'prospekt Mira, 123', '+998 (90) 987-65-43', 'payment_overdue', NOW(), NOW()),
+('Tsifrovoy Dom', 'ulitsa Sovetskaya, 78', '+998 (90) 555-12-34', 'blocked', NOW(), NOW());
 
--- Создание пользователей
-INSERT INTO users (id, login, password, role, "storeId", "createdAt", "updatedAt") VALUES
-('user1', 'admin', '$2b$10$K7L/8Y75aIsgGPUvZ2q2aOBhyiTx8hIXLkw8CK6RD.rJ9rJ9rJ9rJ', 'admin', NULL, '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('user2', 'manager1', '$2b$10$9L8K7Y75aIsgGPUvZ2q2aOBhyiTx8hIXLkw8CK6RD.rJ9rJ9rJ9rJ', 'store_manager', 'store1', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('user3', 'manager2', '$2b$10$9L8K7Y75aIsgGPUvZ2q2aOBhyiTx8hIXLkw8CK6RD.rJ9rJ9rJ9rJ', 'store_manager', 'store2', '2025-07-02 10:22:02', '2025-07-02 10:22:02');
+-- Получите id магазинов после вставки:
+-- SELECT id, name FROM stores;
+-- Например: 1 | Elektronika Center, 2 | TechnoMir, 3 | Tsifrovoy Dom
 
--- Создание клиентов
-INSERT INTO customers (id, "firstName", "lastName", "middleName", "passportSeries", "passportNumber", phone, address, "isBlacklisted", "storeId", "createdAt", "updatedAt") VALUES
-('cust1', 'Иван', 'Петров', 'Сергеевич', '4509', '123456', '+7 (495) 111-22-33', 'ул. Пушкина, 10', false, 'store1', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('cust2', 'Мария', 'Сидорова', 'Александровна', '4510', '654321', '+7 (495) 222-33-44', 'ул. Гагарина, 25', false, 'store1', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('cust3', 'Петр', 'Иванов', 'Михайлович', '4511', '789012', '+7 (495) 333-44-55', 'пр. Ленина, 50', true, 'store2', '2025-07-02 10:22:02', '2025-07-02 10:22:02');
+-- Вставка пользователей (подставьте реальные id магазинов)
+INSERT INTO users (login, password, role, "storeId", "createdAt", "updatedAt") VALUES
+('admin', '$2b$10$K7L/8Y75aIsgGPUvZ2q2aOBhyiTx8hIXLkw8CK6RD.rJ9rJ9rJ9rJ', 'admin', NULL, NOW(), NOW()),
+('manager1', '$2b$10$9L8K7Y75aIsgGPUvZ2q2aOBhyiTx8hIXLkw8CK6RD.rJ9rJ9rJ9rJ', 'store_manager', 1, NOW(), NOW()),
+('manager2', '$2b$10$9L8K7Y75aIsgGPUvZ2q2aOBhyiTx8hIXLkw8CK6RD.rJ9rJ9rJ9rJ', 'store_manager', 2, NOW(), NOW());
 
--- Создание рассрочек
-INSERT INTO installments (id, "productName", "productPrice", "downPayment", "interestRate", months, "totalAmount", "monthlyPayment", status, "customerId", "storeId", "createdAt", "updatedAt") VALUES
-('inst1', 'iPhone 15 Pro', 120000.00, 20000.00, 15.0, 12, 115000.00, 9583.33, 'active', 'cust1', 'store1', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('inst2', 'Samsung Galaxy S24', 80000.00, 10000.00, 12.0, 24, 78400.00, 3266.67, 'active', 'cust2', 'store1', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('inst3', 'MacBook Air M2', 150000.00, 30000.00, 18.0, 18, 141600.00, 7866.67, 'overdue', 'cust3', 'store2', '2025-07-02 10:22:02', '2025-07-02 10:22:02');
+-- Вставка клиентов (подставьте реальные storeId)
+INSERT INTO customers ("firstName", "lastName", "middleName", "passportSeries", "passportNumber", phone, address, "isBlacklisted", "storeId", "createdAt", "updatedAt") VALUES
+('Ivan', 'Petrov', 'Sergeevich', 'AA', '1234567', '+998 (90) 111-22-33', 'ulitsa Pushkina, 10', false, 1, NOW(), NOW()),
+('Maria', 'Sidorova', 'Alexandrovna', 'AB', '7654321', '+998 (90) 222-33-44', 'ulitsa Gagarina, 25', false, 1, NOW(), NOW()),
+('Petr', 'Ivanov', 'Mikhailovich', 'AC', '7890123', '+998 (90) 333-44-55', 'prospekt Lenina, 50', true, 2, NOW(), NOW());
 
--- Платежи для iPhone 15 Pro
-INSERT INTO payments (id, amount, "dueDate", "paidDate", status, "installmentId", "createdAt", "updatedAt") VALUES
-('pay1', 9583.33, '2024-02-01', '2024-02-01', 'paid', 'inst1', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('pay2', 9583.33, '2024-03-01', '2024-03-01', 'paid', 'inst1', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('pay3', 9583.33, '2024-04-01', NULL, 'pending', 'inst1', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('pay4', 9583.33, '2024-05-01', NULL, 'pending', 'inst1', '2025-07-02 10:22:02', '2025-07-02 10:22:02');
+-- Получите id клиентов после вставки:
+-- SELECT id, "firstName" FROM customers;
+-- Например: 1 | Ivan, 2 | Maria, 3 | Petr
 
--- Платежи для Samsung Galaxy S24
-INSERT INTO payments (id, amount, "dueDate", "paidDate", status, "installmentId", "createdAt", "updatedAt") VALUES
-('pay5', 3266.67, '2024-02-01', '2024-02-01', 'paid', 'inst2', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('pay6', 3266.67, '2024-03-01', NULL, 'overdue', 'inst2', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('pay7', 3266.67, '2024-04-01', NULL, 'pending', 'inst2', '2025-07-02 10:22:02', '2025-07-02 10:22:02');
+-- Вставка рассрочек (подставьте реальные customerId и storeId)
+INSERT INTO installments ("productName", "productPrice", "downPayment", "interestRate", months, "totalAmount", "monthlyPayment", status, "customerId", "storeId", "createdAt", "updatedAt") VALUES
+('iPhone 15 Pro', 12000000.00, 2000000.00, 15.0, 12, 11500000.00, 958333.33, 'active', 1, 1, NOW(), NOW()),
+('Samsung Galaxy S24', 8000000.00, 1000000.00, 12.0, 24, 7840000.00, 326666.67, 'active', 2, 1, NOW(), NOW()),
+('MacBook Air M2', 15000000.00, 3000000.00, 18.0, 18, 14160000.00, 786666.67, 'overdue', 3, 2, NOW(), NOW());
 
--- Платежи для MacBook Air M2
-INSERT INTO payments (id, amount, "dueDate", "paidDate", status, "installmentId", "createdAt", "updatedAt") VALUES
-('pay8', 7866.67, '2024-01-01', NULL, 'overdue', 'inst3', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('pay9', 7866.67, '2024-02-01', NULL, 'overdue', 'inst3', '2025-07-02 10:22:02', '2025-07-02 10:22:02'),
-('pay10', 7866.67, '2024-03-01', NULL, 'overdue', 'inst3', '2025-07-02 10:22:02', '2025-07-02 10:22:02');
+-- Получите id рассрочек после вставки:
+-- SELECT id, "productName" FROM installments;
+-- Например: 1 | iPhone 15 Pro, 2 | Samsung Galaxy S24, 3 | MacBook Air M2
+
+-- Вставка платежей (подставьте реальные installmentId)
+INSERT INTO payments (amount, "dueDate", "paidDate", status, "installmentId", "createdAt", "updatedAt") VALUES
+(958333.33, '2024-02-01', '2024-02-01', 'paid', 1, NOW(), NOW()),
+(958333.33, '2024-03-01', '2024-03-01', 'paid', 1, NOW(), NOW()),
+(958333.33, '2024-04-01', NULL, 'pending', 1, NOW(), NOW()),
+(958333.33, '2024-05-01', NULL, 'pending', 1, NOW(), NOW()),
+
+(326666.67, '2024-02-01', '2024-02-01', 'paid', 2, NOW(), NOW()),
+(326666.67, '2024-03-01', NULL, 'pending', 2, NOW(), NOW()),
+
+(786666.67, '2024-02-01', NULL, 'overdue', 3, NOW(), NOW());

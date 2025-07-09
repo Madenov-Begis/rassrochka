@@ -52,9 +52,9 @@ export class StoresService {
     }
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const store = await this.prisma.store.findUnique({
-      where: { id },
+      where: { id: id },
       include: {
         users: true,
       },
@@ -73,9 +73,9 @@ export class StoresService {
     })
   }
 
-  async updateStatus(id: string, status: string) {
+  async updateStatus(id: number, status: string) {
     const store = await this.prisma.store.findUnique({
-      where: { id },
+      where: { id: id },
     })
 
     if (!store) {
@@ -83,12 +83,12 @@ export class StoresService {
     }
 
     return this.prisma.store.update({
-      where: { id },
+      where: { id: id },
       data: { status: status as StoreStatus },
     })
   }
 
-  async getStats(id: string) {
+  async getStats(id: number) {
     const [totalCustomers, totalInstallments, activeInstallments, overdueInstallments, totalAmount] = await Promise.all(
       [
         this.prisma.customer.count({
@@ -119,7 +119,7 @@ export class StoresService {
     }
   }
 
-  async getUsers(id: string) {
+  async getUsers(id: number) {
     return this.prisma.user.findMany({
       where: { storeId: id },
       select: {
@@ -134,7 +134,7 @@ export class StoresService {
   }
 
   async getInstallments(
-    id: string,
+    id: number,
     options: {
       page: number
       limit: number
@@ -171,7 +171,7 @@ export class StoresService {
     }
   }
 
-  async update(id: string, updateStoreDto: any) {
+  async update(id: number, updateStoreDto: any) {
     const store = await this.prisma.store.findUnique({ where: { id } })
     if (!store) throw new NotFoundException('Store not found')
     return this.prisma.store.update({
@@ -180,7 +180,7 @@ export class StoresService {
     })
   }
 
-  async remove(id: string) {
+  async remove(id: number) {
     const store = await this.prisma.store.findUnique({ where: { id } })
     if (!store) throw new NotFoundException('Store not found')
     const [customersCount, installmentsCount, usersCount] = await Promise.all([

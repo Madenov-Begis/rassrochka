@@ -13,20 +13,8 @@ import { CreateOrEditCustomerForm } from "@/components/forms/create-customer-for
 import { Pagination as ServerPagination } from "@/components/pagination"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useNavigate } from "react-router-dom"
-
-interface Customer {
-  id: string;
-  firstName: string;
-  lastName: string;
-  middleName?: string;
-  isBlacklisted: boolean;
-  store?: { name: string };
-  installments?: Array<{ status: string }>;
-  phone?: string;
-  passportSeries?: string;
-  passportNumber?: string;
-  createdAt?: string;
-}
+import type { ApiError, PaginatedApiResponse } from '@/types/api-response'
+import type { Customer } from "@/types/store/customers"
 
 export default function CustomersPage() {
   const navigate = useNavigate()
@@ -36,7 +24,7 @@ export default function CustomersPage() {
 
   const debouncedSearch = useDebounce(search, 400)
 
-  const { data: customers, isLoading } = useQuery({
+  const { data: customers, isLoading } = useQuery<PaginatedApiResponse<Customer[]>, ApiError>({
     queryKey: ["customers", { search: debouncedSearch, page }],
     queryFn: () => customersApi.getAll({ search: debouncedSearch, page }),
   })
@@ -53,6 +41,8 @@ export default function CustomersPage() {
 
     return <Badge className="bg-green-100 text-green-800">Активен</Badge>
   }
+
+  const isSuccess = customers && customers.statusCode === 200 && !!customers.data
 
   return (
     <DashboardLayout>
@@ -90,7 +80,7 @@ export default function CustomersPage() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{customers?.total || 0}</div>
+              <div className="text-2xl font-bold">{customers?.data?.total || 0}</div>
               <p className="text-xs text-muted-foreground">+12% с прошлого месяца</p>
             </CardContent>
           </Card>
@@ -172,8 +162,8 @@ export default function CustomersPage() {
                       Загрузка...
                     </TableCell>
                   </TableRow>
-                ) : (
-                  customers?.data?.map((customer: Customer) => (
+                ) : isSuccess ? (
+                  customers?.data?.items?.map((customer) => (
                     <TableRow key={customer.id}>
                       <TableCell className="font-medium">
                         {customer.lastName} {customer.firstName} {customer.middleName}
@@ -192,12 +182,18 @@ export default function CustomersPage() {
                       </TableCell>
                     </TableRow>
                   ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-red-500">
+                      Ошибка загрузки данных
+                    </TableCell>
+                  </TableRow>
                 )}
               </TableBody>
             </Table>
             <ServerPagination
               page={page}
-              total={customers?.total || 0}
+              total={isSuccess ? customers.data.total : 0}
               limit={10}
               onPageChange={setPage}
               className="flex justify-center mt-6"

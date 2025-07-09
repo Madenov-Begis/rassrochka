@@ -5,7 +5,7 @@ import { PrismaService } from "../../../prisma/prisma.service"
 export class PaymentsService {
   constructor(private prisma: PrismaService) {}
 
-  async findOne(storeId: string, id: string) {
+  async findOne(storeId: number, id: number) {
     const payment = await this.prisma.payment.findFirst({
       where: {
         id,
@@ -27,7 +27,7 @@ export class PaymentsService {
     return payment
   }
 
-  async markPaid(storeId: string, id: string) {
+  async markPaid(storeId: number, id: number) {
     const payment = await this.prisma.payment.findFirst({
       where: {
         id,
@@ -48,7 +48,7 @@ export class PaymentsService {
     })
   }
 
-  async getOverdue(storeId: string) {
+  async getOverdue(storeId: number) {
     return this.prisma.payment.findMany({
       where: {
         installment: { storeId },
@@ -66,7 +66,7 @@ export class PaymentsService {
     })
   }
 
-  async getUpcoming(storeId: string) {
+  async getUpcoming(storeId: number) {
     const nextWeek = new Date()
     nextWeek.setDate(nextWeek.getDate() + 7)
 
@@ -90,7 +90,7 @@ export class PaymentsService {
     })
   }
 
-  async getByInstallment(storeId: string, installmentId: string) {
+  async getByInstallment(storeId: number, installmentId: number) {
     return this.prisma.payment.findMany({
       where: {
         installmentId,

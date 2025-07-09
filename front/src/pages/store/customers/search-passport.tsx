@@ -15,22 +15,24 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { useQuery } from "@tanstack/react-query"
 import { AlertTriangle, CheckCircle, Ban, Search } from "lucide-react"
 import { customersApi } from "@/services/api"
+import type {  GlobalSearchPassport } from "@/types/store/customers"
+import type { ApiError, ApiResponse } from "@/types/api-response"
 
 export default function SearchPassportPage() {
   const [series, setSeries] = useState("")
   const [number, setNumber] = useState("")
-  const [searchParams, setSearchParams] = useState<{ passport: string } | null>(null)
+  const [searchParams, setSearchParams] = useState<{ series: string, number: string } | null>(null)
 
   const {
     data: result,
     isLoading,
     isError,
     error,
-  } = useQuery({
+  } = useQuery<ApiResponse<GlobalSearchPassport>, ApiError>({
     queryKey: ["passport-global-search", searchParams],
     queryFn: () =>
       customersApi.searchByPassportGlobal(
-        searchParams?.passport || ""
+        { series: searchParams?.series || "", number: searchParams?.number || "" }
       ),
     enabled: !!searchParams,
   })
@@ -38,7 +40,7 @@ export default function SearchPassportPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (series.match(/^[A-Z]{2}$/i) && number.match(/^\d{7}$/)) {
-      setSearchParams({ passport: `${series}${number}` })
+      setSearchParams({series,number })
     }
   }
 
@@ -86,53 +88,31 @@ export default function SearchPassportPage() {
             <AlertDescription>Ошибка поиска: {error instanceof Error ? error.message : "Неизвестная ошибка"}</AlertDescription>
           </Alert>
         )}
-        {result && Array.isArray(result) && result.length === 0 && (
+        {result && Array.isArray(result.data) && result.data.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">Клиент с таким паспортом не найден ни в одном магазине</div>
         )}
-        {result && Array.isArray(result) && result.length > 0 && (
+        {result && Array.isArray(result.data) && result.data.length > 0 && (
           <div className="space-y-8">
-            {result.map((block: {
-              store: { id: string; name: string };
-              customer: {
-                lastName: string;
-                firstName: string;
-                middleName: string;
-                phone: string;
-                address: string;
-                passportSeries: string;
-                passportNumber: string;
-                isBlacklisted: boolean;
-              };
-              installments: Array<{
-                id: string;
-                productName: string;
-                totalAmount: string;
-                status: string;
-                createdAt: string;
-              }>;
-            }) => {
-              const hasOverdue = block.installments?.some((i) => i.status === "overdue")
+            {result.data.map((block: GlobalSearchPassport) => {
               return (
-                <Card key={block.store.id} className={hasOverdue ? "border-red-500" : ""}>
+                <Card key={block.store.id} className={block.isBlacklisted ? "border-red-500" : ""}>
                   <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                       <CardTitle className="text-lg">{block.store.name}</CardTitle>
-                      <div className="text-xs text-muted-foreground">Магазин #{block.store.id.slice(-6)}</div>
+                      <div className="text-xs text-muted-foreground">Магазин #{block.store.id.toString().slice(-6)}</div>
                     </div>
-                    {hasOverdue && (
+                    {block.installments?.some((i) => i.status === "overdue" || i.status === "pending") && (
                       <Badge className="bg-red-100 text-red-800"><AlertTriangle className="h-3 w-3 mr-1" />Есть просрочки</Badge>
                     )}
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex flex-col md:flex-row gap-6 md:items-center">
                       <div className="flex-1 space-y-1">
-                        <div className="font-bold text-lg">{block.customer.lastName} {block.customer.firstName} {block.customer.middleName}</div>
-                        <div className="text-sm text-muted-foreground">{block.customer.phone}</div>
-                        <div className="text-sm text-muted-foreground">{block.customer.address}</div>
-                        <div className="text-xs text-gray-400">Паспорт: {block.customer.passportSeries} {block.customer.passportNumber}</div>
+                            <div className="font-bold text-lg">{block.lastName} {block.firstName} {block.middleName}</div>
+                        <div className="text-sm text-muted-foreground">{block.phone}</div>
                       </div>
                       <div className="flex flex-col gap-2 items-end">
-                        {block.customer.isBlacklisted ? (
+                        {block.isBlacklisted ? (
                           <Badge className="bg-red-100 text-red-800"><Ban className="h-3 w-3 mr-1" />В чёрном списке</Badge>
                         ) : (
                           <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Активен</Badge>

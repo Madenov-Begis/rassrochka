@@ -29,18 +29,13 @@ export class CustomersController {
     })
   }
 
-  @Get("search")
-  async searchByPassport(@Req() req: any, @Query('passport') passport: string) {
-    return this.customersService.searchByPassport(req.user.storeId, passport)
-  }
-
   @Get("search-global")
-  async searchByPassportGlobal(@Query('passport') passport: string) {
-    return this.customersService.searchByPassportGlobal(passport)
+  async searchByPassportGlobal(@Query('series') series: string, @Query('number') number: string) {
+    return this.customersService.searchByPassportGlobal(series, number)
   }
 
   @Get(":id")
-  async findOne(@Req() req: any, @Param('id') id: string) {
+  async findOne(@Req() req: any, @Param('id') id: number) {
     return this.customersService.findOne(req.user.storeId, id)
   }
 
@@ -50,14 +45,14 @@ export class CustomersController {
   }
 
   @Put(":id/blacklist")
-  async updateBlacklist(@Req() req: any, @Param('id') id: string, @Body('isBlacklisted') isBlacklisted: boolean) {
+  async updateBlacklist(@Req() req: any, @Param('id') id: number, @Body('isBlacklisted') isBlacklisted: boolean) {
     return this.customersService.updateBlacklist(req.user.storeId, id, isBlacklisted)
   }
 
   @Put(":id")
   async update(
     @Req() req: any,
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Body() updateCustomerDto: UpdateCustomerDto
   ) {
     return this.customersService.update(req.user.storeId, id, updateCustomerDto)
@@ -66,7 +61,7 @@ export class CustomersController {
   @Get(":id/installments")
   findCustomerInstallments(
     @CurrentUser() user: any,
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
   ) {

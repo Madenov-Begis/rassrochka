@@ -6,7 +6,7 @@ import type { Prisma } from "@prisma/client"
 
 @Injectable()
 export class UsersService {
-  updateStatus(id: string, isActive: boolean) {
+  updateStatus(id: number, isActive: boolean) {
     throw new Error("Method not implemented.")
   }
   constructor(private prisma: PrismaService) {}
@@ -57,7 +57,7 @@ export class UsersService {
     }
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -91,12 +91,13 @@ export class UsersService {
     return this.prisma.user.create({
       data: {
         ...userData,
-        password: hashedPassword,
+        password: hashedPassword, 
+        storeId: createUserDto.storeId ? Number(createUserDto.storeId) : undefined,
       },
       select: {
         id: true,
         login: true,
-        role: true,
+        role: true, 
         storeId: true,
         createdAt: true,
         status: true,
@@ -126,7 +127,7 @@ export class UsersService {
   //   })
   // }
 
-  async getActivity(id: string) {
+  async getActivity(id: number) {
     // В реальном приложении здесь была бы таблица логов активности
     // Пока возвращаем заглушку
     return [
@@ -138,7 +139,7 @@ export class UsersService {
     ]
   }
 
-  async updateUser(id: string, update: { login?: string; role?: string; storeId?: string | null; status?: string; password?: string }) {
+  async updateUser(id: number, update: { login?: string; role?: string; storeId?: number; status?: string; password?: string }) {
     const data: Prisma.UserUpdateInput = {}
     if (update.login !== undefined) data.login = update.login
     if (update.role !== undefined) data.role = update.role as any

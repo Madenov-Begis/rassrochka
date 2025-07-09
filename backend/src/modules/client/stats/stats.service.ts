@@ -5,7 +5,7 @@ import { PrismaService } from "../../../prisma/prisma.service"
 export class StatsService {
   constructor(private prisma: PrismaService) {}
 
-  async getStoreStats(storeId: string) {
+  async getStoreStats(storeId: number) {
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)

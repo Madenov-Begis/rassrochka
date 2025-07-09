@@ -17,10 +17,15 @@ export class AuthService {
       include: { store: true },
     })
 
+    // bcrypt.hash('admin123', 10).then((hashed) => {
+    //   console.log('Hashed password:', hashed);
+    // });
 
     if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
       throw new UnauthorizedException("Invalid credentials")
     }
+
+
 
     const payload = {
       sub: user.id,
@@ -40,7 +45,7 @@ export class AuthService {
     }
   }
 
-  async getProfile(userId: string) {
+  async getProfile(userId: number) {
     return this.prisma.user.findUnique({
       where: { id: userId },
       select: {

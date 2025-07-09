@@ -19,12 +19,12 @@ export class PaymentsController {
   }
 
   @Get(":id")
-  async findOne(@Req() req: any, @Param('id') id: string) {
+  async findOne(@Req() req: any, @Param('id') id: number) {
     return this.paymentsService.findOne(req.user.storeId, id)
   }
 
   @Put(":id/mark-paid")
-  async markPaid(@Req() req: any, @Param('id') id: string) {
+  async markPaid(@Req() req: any, @Param('id') id: number) {
     return this.paymentsService.markPaid(req.user.storeId, id)
   }
 }

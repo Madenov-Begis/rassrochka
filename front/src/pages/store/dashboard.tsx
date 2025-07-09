@@ -15,7 +15,7 @@ export default function StoreDashboard() {
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["store-stats"],
-    queryFn: () => installmentsApi.getStats(),
+    queryFn: () => installmentsApi.getStats(storeId),
   })
 
   const { data: recentInstallments } = useQuery({
@@ -60,7 +60,7 @@ export default function StoreDashboard() {
   }
 
   const monthlyTarget = 10000000 // 10M UZS цель на месяц
-  const currentProgress = (stats?.monthlyRevenue / monthlyTarget) * 100 || 0
+  const currentProgress = (stats?.data?.monthlyRevenue / monthlyTarget) * 100 || 0
 
   return (
     <DashboardLayout>
@@ -81,8 +81,8 @@ export default function StoreDashboard() {
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalInstallments || 0}</div>
-              <p className="text-xs text-muted-foreground">+{stats?.newThisMonth || 0} за этот месяц</p>
+              <div className="text-2xl font-bold">{stats?.data?.totalInstallments || 0}</div>
+              <p className="text-xs text-muted-foreground">+{stats?.data?.newThisMonth || 0} за этот месяц</p>
             </CardContent>
           </Card>
 
@@ -92,9 +92,9 @@ export default function StoreDashboard() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats?.activeInstallments || 0}</div>
+              <div className="text-2xl font-bold text-green-600">{stats?.data?.activeInstallments || 0}</div>
               <p className="text-xs text-muted-foreground">
-                {((stats?.activeInstallments / stats?.totalInstallments) * 100 || 0).toFixed(1)}% от общего числа
+                {((stats?.data?.activeInstallments / stats?.data?.totalInstallments) * 100 || 0).toFixed(1)}% от общего числа
               </p>
             </CardContent>
           </Card>
@@ -105,7 +105,7 @@ export default function StoreDashboard() {
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{overduePayments?.length || 0}</div>
+              <div className="text-2xl font-bold text-red-600">{overduePayments?.data?.length || 0}</div>
               <p className="text-xs text-muted-foreground text-red-600">Требует внимания</p>
             </CardContent>
           </Card>
@@ -116,9 +116,9 @@ export default function StoreDashboard() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(stats?.monthlyRevenue || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
+              <div className="text-2xl font-bold">{(stats?.data?.monthlyRevenue || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
               <p className="text-xs text-muted-foreground">
-                <TrendingUp className="h-3 w-3 inline mr-1" />+{stats?.revenueGrowth || 0}% к прошлому месяцу
+                <TrendingUp className="h-3 w-3 inline mr-1" />+{stats?.data?.revenueGrowth || 0}% к прошлому месяцу
               </p>
             </CardContent>
           </Card>
@@ -133,13 +133,13 @@ export default function StoreDashboard() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>
-                  {(stats?.monthlyRevenue || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS из {(monthlyTarget).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS
+                    {(stats?.data?.monthlyRevenue || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS из {(monthlyTarget).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS
                 </span>
                 <span>{currentProgress.toFixed(1)}%</span>
               </div>
               <Progress value={currentProgress} className="h-2" />
               <p className="text-xs text-muted-foreground">
-                Осталось {(monthlyTarget - (stats?.monthlyRevenue || 0)).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS до цели
+                Осталось {(monthlyTarget - (stats?.data?.monthlyRevenue || 0)).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS до цели
               </p>
             </div>
           </CardContent>
@@ -165,7 +165,7 @@ export default function StoreDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {recentInstallments?.data?.map((installment: any) => (
+                  {recentInstallments?.data?.items?.map((installment: any) => (
                     <TableRow
                       key={installment.id}
                       className="cursor-pointer hover:bg-gray-50"
@@ -194,7 +194,7 @@ export default function StoreDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {upcomingPayments?.data?.slice(0, 5).map((payment: any) => (
+                {upcomingPayments?.data?.items?.slice(0, 5).map((payment: any) => (
                   <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <Calendar className="h-4 w-4 text-gray-400" />
@@ -224,12 +224,12 @@ export default function StoreDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-red-800">
                 <AlertTriangle className="h-5 w-5" />
-                Просроченные платежи ({overduePayments.length})
+                Просроченные платежи ({overduePayments?.data?.length || 0})
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {overduePayments?.data?.slice(0, 3).map((payment: any) => (
+                {overduePayments?.data?.items?.slice(0, 3).map((payment: any) => (
                   <div key={payment.id} className="flex items-center justify-between p-2 bg-white rounded">
                     <div>
                       <p className="font-medium">
@@ -249,7 +249,7 @@ export default function StoreDashboard() {
                 {overduePayments?.data?.length > 3 && (
                   <div className="text-center pt-2">
                     <Button variant="outline" size="sm" onClick={() => navigate("/store/payments?status=overdue")}>
-                      Показать все ({overduePayments.length})
+                      Показать все ({overduePayments?.data?.length || 0})
                     </Button>
                   </div>
                 )}

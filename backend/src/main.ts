@@ -3,6 +3,7 @@ import { ValidationPipe, Logger, HttpException, ArgumentsHost, Catch, ExceptionF
 import { ConfigService } from "@nestjs/config"
 import { AppModule } from "./app.module"
 import { Response } from 'express'
+import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 
 @Catch()
 class GlobalHttpExceptionFilter implements ExceptionFilter {
@@ -12,8 +13,14 @@ class GlobalHttpExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus ? exception.getStatus() : 500
 
     // Validation error (422)
-    if (status === 422 || (status === 400 && exception.response?.message && Array.isArray(exception.response.message) && exception.response.message[0] instanceof Object && exception.response.message[0].property)) {
-      // NestJS ValidationPipe returns status 400 by default, but you may want 422
+    if (
+      status === 422 ||
+      (status === 400 &&
+        exception.response?.message &&
+        Array.isArray(exception.response.message) &&
+        exception.response.message[0] instanceof Object &&
+        exception.response.message[0].property)
+    ) {
       const errors: Record<string, string[]> = {}
       if (Array.isArray(exception.response?.message)) {
         for (const err of exception.response.message) {
@@ -22,12 +29,21 @@ class GlobalHttpExceptionFilter implements ExceptionFilter {
           }
         }
       }
-      return response.status(422).json({ statusCode: 422, errors })
+      return response.status(422).json({
+        statusCode: 422,
+        data: null,
+        message: 'Ошибка валидации',
+        errors,
+      })
     }
 
     // Другие ошибки
     const message = exception.response?.message || exception.message || 'Internal server error'
-    response.status(status).json({ statusCode: status, message })
+    response.status(status).json({
+      statusCode: status,
+      data: null,
+      message,
+    })
   }
 }
 
@@ -46,6 +62,9 @@ async function bootstrap() {
 
   // Глобальный фильтр ошибок
   app.useGlobalFilters(new GlobalHttpExceptionFilter())
+
+  // Глобальный интерцептор для успешных ответов
+  app.useGlobalInterceptors(new ResponseInterceptor())
 
   // CORS
   app.enableCors({

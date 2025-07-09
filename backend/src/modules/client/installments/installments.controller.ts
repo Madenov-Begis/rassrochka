@@ -24,16 +24,16 @@ export class InstallmentsController {
 
   @Get(":id")
   findOne(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.installmentsService.findOne(id, user.storeId)
+    return this.installmentsService.findOne(Number(id), user.storeId)
   }
 
   @Put(":id/pay-off-early")
   payOffEarly(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.installmentsService.payOffEarly(id, user.storeId)
+    return this.installmentsService.payOffEarly(Number(id), user.storeId)
   }
 
   @Get(":id/payments")
   getPayments(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.installmentsService.getPayments(id, user.storeId)
+    return this.installmentsService.getPayments(Number(id), user.storeId)
   }
 }

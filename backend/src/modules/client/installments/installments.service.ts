@@ -9,7 +9,7 @@ export class InstallmentsService {
     private prisma: PrismaService,
   ) {}
 
-  async create(createInstallmentDto: CreateInstallmentDto, storeId: string) {
+  async create(createInstallmentDto: CreateInstallmentDto, storeId: number) {
     const { productPrice, downPayment, interestRate, months, customerId } = createInstallmentDto
 
     // Получаем клиента
@@ -55,7 +55,7 @@ export class InstallmentsService {
     return installment
   }
 
-  async findAll(storeId: string, query: any) {
+  async findAll(storeId: number, query: any) {
     let { status, search, page = 1, limit = 10 } = query
     page = Number(page)
     limit = Number(limit)
@@ -99,7 +99,7 @@ export class InstallmentsService {
     }
   }
 
-  async findOne(id: string, storeId: string) {
+  async findOne(id: number, storeId: number) {
     const installment = await this.prisma.installment.findFirst({
       where: { id, storeId },
       include: {
@@ -117,7 +117,7 @@ export class InstallmentsService {
     return installment
   }
 
-  async payOffEarly(id: string, storeId: string) {
+  async payOffEarly(id: number, storeId: number) {
     const installment = await this.findOne(id, storeId)
 
     const paidPayments = await this.prisma.payment.findMany({
@@ -156,7 +156,7 @@ export class InstallmentsService {
     }
   }
 
-  async getPayments(id: string, storeId: string) {
+  async getPayments(id: number, storeId: number) {
     await this.findOne(id, storeId) // Проверка доступа
 
     return this.prisma.payment.findMany({
@@ -165,7 +165,7 @@ export class InstallmentsService {
     })
   }
 
-  async findByCustomer(storeId: string, customerId: string, page = 1, limit = 10) {
+  async findByCustomer(storeId: number, customerId: number, page = 1, limit = 10) {
     page = Number(page)
     limit = Number(limit)
     const where = { storeId, customerId }

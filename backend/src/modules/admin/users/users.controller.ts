@@ -25,12 +25,12 @@ export class UsersController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: number) {
     return this.usersService.findOne(id);
   }
 
   @Get(':id/activity')
-  async getActivity(@Param('id') id: string) {
+  async getActivity(@Param('id') id: number) {
     return this.usersService.getActivity(id);
   }
 
@@ -40,12 +40,12 @@ export class UsersController {
   }
 
   @Put(":id/status")
-  async updateStatus(@Param('id') id: string, @Body('isActive') isActive: boolean) {
+  async updateStatus(@Param('id') id: number, @Body('isActive') isActive: boolean) {
     return this.usersService.updateStatus(id, isActive)
   }
 
   @Put(':id')
-  async updateUser(@Param('id') id: string, @Body() update: { login?: string; role?: string; storeId?: string; status?: string }) {
+  async updateUser(@Param('id') id: number, @Body() update: { login?: string; role?: string; storeId?: number; status?: string; password?: string }) {
     return this.usersService.updateUser(id, update);
   }
 }

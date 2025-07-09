@@ -28,5 +28,5 @@ export class CreateInstallmentDto {
   months: number
 
   @IsString()
-  customerId: string
+  customerId: number
 }

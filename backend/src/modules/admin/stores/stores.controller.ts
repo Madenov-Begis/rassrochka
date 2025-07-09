@@ -22,22 +22,22 @@ export class StoresController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: number) {
     return this.storesService.findOne(id);
   }
 
   @Get(':id/stats')
-  async getStats(@Param('id') id: string) {
+  async getStats(@Param('id') id: number) {
     return this.storesService.getStats(id);
   }
 
   @Get(':id/users')
-  async getUsers(@Param('id') id: string) {
+  async getUsers(@Param('id') id: number) {
     return this.storesService.getUsers(id);
   }
 
   @Get(":id/installments")
-  async getInstallments(@Param('id') id: string, @Query() query: { page?: number; limit?: number }) {
+  async getInstallments(@Param('id') id: number, @Query() query: { page?: number; limit?: number }) {
     return this.storesService.getInstallments(id, {
       page: Number(query.page) || 1,
       limit: Number(query.limit) || 10,
@@ -50,18 +50,18 @@ export class StoresController {
   }
 
   @Put(":id/status")
-  async updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdateStoreDto) {
+  async updateStatus(@Param('id') id: number, @Body() updateStatusDto: UpdateStoreDto) {
     if (!updateStatusDto.status) throw new Error('Status is required')
     return this.storesService.updateStatus(id, updateStatusDto.status)
   }
 
   @Put(":id")
-  async update(@Param('id') id: string, @Body() updateStoreDto: UpdateStoreDto) {
+  async update(@Param('id') id: number, @Body() updateStoreDto: UpdateStoreDto) {
     return this.storesService.update(id, updateStoreDto)
   }
 
   @Delete(":id")
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: number) {
     return this.storesService.remove(id)
   }
 }

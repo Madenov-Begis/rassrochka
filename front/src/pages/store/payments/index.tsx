@@ -13,6 +13,8 @@ import { Search, Calendar, Eye, Plus } from "lucide-react"
 import { format } from "date-fns"
 import { ru } from "date-fns/locale"
 import { Pagination as ServerPagination } from "@/components/pagination"
+import type { PaginatedApiResponse } from '@/types/api-response'
+import type { Payment } from '@/types/payment'
 
 export default function StorePayments() {
   const navigate = useNavigate()
@@ -20,7 +22,7 @@ export default function StorePayments() {
   const [page, setPage] = useState(1)
   const limit = 10
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<PaginatedApiResponse<Payment>>({
     queryKey: ["payments", { page, limit, search }],
       queryFn: () => paymentsApi.getAll({ page, limit, search }),
   })
@@ -97,7 +99,7 @@ export default function StorePayments() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {payments.map((payment: any) => (
+                    {payments.map((payment: Payment) => (
                       <TableRow key={payment.id}>
                         <TableCell className="font-medium">{payment.installment?.customer?.name}</TableCell>
                         <TableCell>#{payment.installment?.id.slice(-8)}</TableCell>

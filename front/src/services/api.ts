@@ -1,5 +1,8 @@
 import axios from "axios"
 import { useAuthStore } from "../store/auth-store"
+import type { ApiResponse, PaginatedApiResponse, ResponseWithMessage } from '../types/api-response'
+import type { Customer, CustomerBody, GlobalSearchPassport } from "@/types/store/customers"
+import type { Installment } from "@/types/store/installments"
 
 const API_BASE = "http://localhost:3000"
 
@@ -24,11 +27,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      useAuthStore.getState().logout()
-      window.location.href = "/login"
-    }
-    return Promise.reject(error)
+    // if (error.response && error.response.status === 401) {
+    //   useAuthStore.getState().logout()
+    //   window.location.href = "/login"
+    // }
+    return Promise.reject(error.response?.data)
   }
 )
 
@@ -77,20 +80,18 @@ export const adminApi = {
 // --- CLIENT ---
 export const customersApi = {
   getAll: (params?: Record<string, string | number>) =>
-    api.get("api/client/customers", { params }).then((r) => r.data),
-  getOne: (id: string) => api.get(`api/client/customers/${id}`).then((r) => r.data),
-  create: (data: Record<string, unknown>) =>
-    api.post("api/client/customers", data).then((r) => r.data),
+    api.get<PaginatedApiResponse<Customer[]>>("api/client/customers", { params }).then((r) => r.data),
+  getOne: (id: string) => api.get<ApiResponse<Customer>>(`api/client/customers/${id}`).then((r) => r.data),
+  create: (data: CustomerBody) =>
+    api.post<ResponseWithMessage>("api/client/customers", data).then((r) => r.data),
   updateBlacklist: (id: string, isBlacklisted: boolean) =>
-    api.put(`api/client/customers/${id}/blacklist`, { isBlacklisted }).then((r) => r.data),
-  searchByPassport: (passport: string) =>
-    api.get(`api/client/customers/search`, { params: { passport } }).then((r) => r.data),
-  searchByPassportGlobal: (passport: string) =>
-    api.get(`api/client/customers/search-global`, { params: { passport } }).then((r) => r.data),
-  update: (id: string, data: Record<string, unknown>) =>
-    api.put(`api/client/customers/${id}`, data).then((r) => r.data),
+    api.put<ResponseWithMessage>(`api/client/customers/${id}/blacklist`, { isBlacklisted }).then((r) => r.data),
+  searchByPassportGlobal: ({ series, number }: { series: string, number: string }) =>
+    api.get<ApiResponse<GlobalSearchPassport>>(`api/client/customers/search-global`, { params: { series, number } }).then((r) => r.data),
+  update: (id: string, data: CustomerBody) =>
+    api.put<ResponseWithMessage>(`api/client/customers/${id}`, data).then((r) => r.data),
   getInstallments: (id: string, params?: Record<string, string | number>) =>
-    api.get(`api/client/customers/${id}/installments`, { params }).then((r) => r.data),
+    api.get<PaginatedApiResponse<Installment[]>>(`api/client/customers/${id}/installments`, { params }).then((r) => r.data),
 }
 
 export const installmentsApi = {

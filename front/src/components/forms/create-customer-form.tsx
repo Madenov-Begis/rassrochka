@@ -7,15 +7,16 @@ import { Loader2 } from "lucide-react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { customersApi } from "@/services/api"
 import InputMask from "react-input-mask"
+import type { ApiError, ResponseWithMessage } from "@/types/api-response"
+import type { Customer, CustomerBody } from "@/types/store/customers"
 
 interface CreateOrEditCustomerFormProps {
   onSuccess: () => void
-  onError?: (error: string) => void
-  initialValues?: Record<string, unknown>
+  initialValues?: Customer
   editMode?: boolean
 }
 
-export function CreateOrEditCustomerForm({ onSuccess, onError, initialValues, editMode }: CreateOrEditCustomerFormProps) {
+export function CreateOrEditCustomerForm({ onSuccess,  initialValues, editMode }: CreateOrEditCustomerFormProps) {
   const queryClient = useQueryClient()
   const {
     register,
@@ -23,46 +24,40 @@ export function CreateOrEditCustomerForm({ onSuccess, onError, initialValues, ed
     formState: { errors },
     control,
     reset,
-  } = useForm({
+    setError
+  } = useForm<CustomerBody>({
     defaultValues: initialValues || {},
   })
 
-  const mutation = useMutation({
-    mutationFn: (data: Record<string, unknown>) =>
+  const mutation = useMutation<ResponseWithMessage, ApiError, CustomerBody>({
+    mutationFn: (data: CustomerBody) =>
       editMode && initialValues?.id
         ? customersApi.update(initialValues.id as string, data)
         : customersApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] })
       onSuccess()
+      reset()
     },
-    onError: (error: unknown) => {
-      if (onError && error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data) {
-        // @ts-ignore
-        onError(error.response.data.message || "Ошибка при сохранении клиента")
-      } else if (onError) {
-        onError("Ошибка при сохранении клиента")
-      }
-    },
+    onError: (error) => {
+      const err = error as ApiError
+      if (err.errors) {
+        Object.entries(err.errors).forEach(([key, value]) => {
+          setError(key as keyof CustomerBody, { message: value[0] })
+        })
+      } 
+    }
   })
 
-  const allowedFields = [
-    "firstName", "lastName", "middleName",
-    "passportSeries", "passportNumber", "phone", "address"
-  ];
-
-  const onSubmit = (data: Record<string, unknown>) => {
-    const filteredData = Object.fromEntries(
-      Object.entries(data).filter(([key]) => allowedFields.includes(key))
-    );
-    mutation.mutate(filteredData)
+  const onSubmit = async (data: CustomerBody) => {
+    await mutation.mutateAsync(data)
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {mutation.error && (
         <Alert variant="destructive">
-          <AlertDescription>{mutation.error instanceof Error ? mutation.error.message : "Ошибка при сохранении клиента"}</AlertDescription>
+          <AlertDescription>{ mutation.error.message}</AlertDescription>
         </Alert>
       )}
 
@@ -138,7 +133,7 @@ export function CreateOrEditCustomerForm({ onSuccess, onError, initialValues, ed
           render={({ field }) => (
             <InputMask
               mask="+998 (99) 999-99-99"
-              value={field.value || ''}
+              value={field.value as string}
               onChange={field.onChange}
               onBlur={field.onBlur}
               disabled={mutation.isPending}

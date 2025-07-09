@@ -9,54 +9,42 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
+import { keepPreviousData, useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
 import { customersApi } from "@/services/api"
 import { DashboardSkeleton } from "@/components/loading/dashboard-skeleton"
 import { CreateOrEditCustomerForm } from "@/components/forms/create-customer-form"
 import { Pagination as ServerPagination } from "@/components/pagination"
 import { toast } from "react-toastify"
+import type { ApiError, ApiResponse, PaginatedApiResponse } from "@/types/api-response"
+import type { Customer } from "@/types/store/customers"
+import type { Installment } from "@/types/store/installments" 
 
-interface CustomerInstallmentsResponse {
-  data: Array<{
-    id: string;
-    productName: string;
-    totalAmount: string;
-    monthlyPayment: string;
-    status: string;
-    createdAt: string;
-  }>;
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
 
 export default function CustomerDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [isEditOpen, setIsEditOpen] = useState(false)
-  const [editError, setEditError] = useState<string | null>(null)
   const [installmentsPage, setInstallmentsPage] = useState(1)
   const installmentsLimit = 10
   const [isBlacklistDialogOpen, setIsBlacklistDialogOpen] = useState(false)
 
-  const { data: customer, isLoading } = useQuery({
+  const { data: customer, isLoading } = useQuery<ApiResponse<Customer>, ApiError>({
     queryKey: ["customer", id],
     queryFn: () => customersApi.getOne(id as string),
     enabled: !!id,
   })
 
-  const { data: customerInstallments, isLoading: isInstallmentsLoading } = useQuery<CustomerInstallmentsResponse>({
+  const { data: customerInstallments, isLoading: isInstallmentsLoading } = useQuery<PaginatedApiResponse<Installment[]>, ApiError>({
     queryKey: ["customer-installments", id, installmentsPage],
     queryFn: () => customersApi.getInstallments(id as string, { page: installmentsPage, limit: installmentsLimit }),
     enabled: !!id,
-    placeholderData: { data: [], total: 0, page: installmentsPage, limit: installmentsLimit, totalPages: 1 },
+    placeholderData: keepPreviousData,
   })
 
   const blacklistMutation = useMutation({
     mutationFn: (isBlacklisted: boolean) => customersApi.updateBlacklist(id as string, isBlacklisted),
-    onSuccess: (data, isBlacklisted) => {
+    onSuccess: (_, isBlacklisted) => {
       queryClient.invalidateQueries({ queryKey: ["customer", id] })
       setIsBlacklistDialogOpen(false)
       toast.success(isBlacklisted ? "Клиент заблокирован" : "Клиент разблокирован")
@@ -102,10 +90,10 @@ export default function CustomerDetailPage() {
     return <Badge className={variants[status as keyof typeof variants]}>{labels[status as keyof typeof labels]}</Badge>
   }
 
-  const totalInstallments = customerInstallments?.data?.length || 0
-  const activeInstallments = customerInstallments?.data?.filter((i: { status: string }) => i.status === "active").length || 0
-  const overdueInstallments = customerInstallments?.data?.filter((i: { status: string }) => i.status === "overdue").length || 0
-  const totalAmount = customerInstallments?.data?.reduce((sum: number, i: { totalAmount: string }) => sum + Number(i.totalAmount), 0) || 0
+  const totalInstallments = customerInstallments?.data?.items?.length || 0
+  const activeInstallments = customerInstallments?.data?.items?.filter((i: Installment) => i.status === "active").length || 0
+  const overdueInstallments = customerInstallments?.data?.items?.filter((i: Installment) => i.status === "overdue").length || 0
+  const totalAmount = customerInstallments?.data?.items?.reduce((sum: number, i: Installment) => sum + Number(i.totalAmount), 0) || 0
 
   return (
     <DashboardLayout>
@@ -118,12 +106,11 @@ export default function CustomerDetailPage() {
           </Button>
           <div className="flex-1">
             <h1 className="text-3xl font-bold">
-              {customer.lastName} {customer.firstName} {customer.middleName}
+              {customer.data?.lastName} {customer.data?.firstName} {customer.data?.middleName}
             </h1>
-            <p className="text-gray-600">Профиль клиента #{customer.id.slice(-8)}</p>
           </div>
           <div className="flex items-center gap-2">
-            {customer.isBlacklisted ? (
+            {customer.data?.isBlacklisted ? (
               <Badge className="bg-red-100 text-red-800">
                 <Ban className="h-3 w-3 mr-1" />
                 Заблокирован
@@ -207,7 +194,7 @@ export default function CustomerDetailPage() {
                     <User className="h-5 w-5 text-gray-400" />
                     <div>
                       <p className="font-medium">
-                        {customer.lastName} {customer.firstName} {customer.middleName}
+                        {customer.data?.lastName} {customer.data?.firstName} {customer.data?.middleName}
                       </p>
                       <p className="text-sm text-gray-600">ФИО</p>
                     </div>
@@ -216,7 +203,7 @@ export default function CustomerDetailPage() {
                   <div className="flex items-center gap-3">
                     <Phone className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="font-medium">{customer.phone}</p>
+                      <p className="font-medium">{customer.data?.phone}</p>
                       <p className="text-sm text-gray-600">Телефон</p>
                     </div>
                   </div>
@@ -224,7 +211,7 @@ export default function CustomerDetailPage() {
                   <div className="flex items-center gap-3">
                     <MapPin className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="font-medium">{customer.address}</p>
+                      <p className="font-medium">{customer.data?.address}</p>
                       <p className="text-sm text-gray-600">Адрес</p>
                     </div>
                   </div>
@@ -232,13 +219,13 @@ export default function CustomerDetailPage() {
                   <div className="border-t pt-4">
                     <p className="text-sm text-gray-600 mb-2">Паспортные данные</p>
                     <p className="font-medium">
-                      {customer.passportSeries} {customer.passportNumber}
+                      {customer.data?.passportSeries} {customer.data?.passportNumber}
                     </p>
                   </div>
 
                   <div className="border-t pt-4">
                     <p className="text-sm text-gray-600 mb-2">Дата регистрации</p>
-                    <p className="font-medium">{new Date(customer.createdAt).toLocaleDateString()}</p>
+                    <p className="font-medium">{new Date(customer.data?.createdAt || "").toLocaleDateString()}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -251,29 +238,29 @@ export default function CustomerDetailPage() {
                 <CardContent className="space-y-4">
                   <Button
                     className="w-full"
-                    onClick={() => navigate(`/store/installments/create?customerId=${customer.id}`)}
+                    onClick={() => navigate(`/store/installments/create?customerId=${customer.data?.id}`)}
                   >
                     <CreditCard className="h-4 w-4 mr-2" />
                     Создать рассрочку
                   </Button>
                   <Button
-                    variant={customer.isBlacklisted ? "outline" : "destructive"}
+                    variant={customer.data?.isBlacklisted ? "outline" : "destructive"}
                     className="w-full"
                     onClick={() => setIsBlacklistDialogOpen(true)}
                   >
                     <Ban className="h-4 w-4 mr-2" />
-                    {customer.isBlacklisted ? "Разблокировать" : "Заблокировать"}
+                    {customer.data?.isBlacklisted ? "Разблокировать" : "Заблокировать"}
                   </Button>
                   <Dialog open={isBlacklistDialogOpen} onOpenChange={setIsBlacklistDialogOpen}>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>
-                          {customer.isBlacklisted ? "Разблокировать клиента" : "Заблокировать клиента"}
+                          {customer.data?.isBlacklisted ? "Разблокировать клиента" : "Заблокировать клиента"}
                         </DialogTitle>
                       </DialogHeader>
-                      <Alert variant={customer.isBlacklisted ? "default" : "destructive"}>
+                      <Alert variant={customer.data?.isBlacklisted ? "default" : "destructive"}>
                         <AlertDescription>
-                          {customer.isBlacklisted
+                          {customer.data?.isBlacklisted
                             ? "Клиент будет удалён из чёрного списка и сможет оформлять новые рассрочки."
                             : "Клиент будет добавлен в чёрный список и не сможет оформлять новые рассрочки во всех магазинах сети."}
                         </AlertDescription>
@@ -283,11 +270,11 @@ export default function CustomerDetailPage() {
                           Отмена
                         </Button>
                         <Button
-                          variant={customer.isBlacklisted ? "default" : "destructive"}
-                          onClick={() => blacklistMutation.mutate(!customer.isBlacklisted)}
+                          variant={customer.data?.isBlacklisted ? "default" : "destructive"}
+                          onClick={() => blacklistMutation.mutate(!customer.data?.isBlacklisted)}
                           disabled={blacklistMutation.isPending}
                         >
-                          {customer.isBlacklisted ? "Разблокировать" : "Заблокировать"}
+                          {customer.data?.isBlacklisted ? "Разблокировать" : "Заблокировать"}
                         </Button>
                       </div>
                     </DialogContent>
@@ -329,7 +316,7 @@ export default function CustomerDetailPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {customerInstallments?.data?.map((installment) => (
+                        {customerInstallments?.data?.items?.map((installment) => (
                           <TableRow key={installment.id}>
                             <TableCell className="font-medium">{installment.productName}</TableCell>
                             <TableCell>{Number(installment.totalAmount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</TableCell>
@@ -350,8 +337,8 @@ export default function CustomerDetailPage() {
                       </TableBody>
                     </Table>
                     <ServerPagination
-                      page={customerInstallments?.page || 1}
-                      total={customerInstallments?.total || 0}
+                      page={customerInstallments?.data?.page || 1}
+                      total={customerInstallments?.data?.total || 0}
                       limit={installmentsLimit}
                       onPageChange={setInstallmentsPage}
                       className="flex justify-center mt-6"
@@ -373,11 +360,11 @@ export default function CustomerDetailPage() {
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <div className="flex-1">
                       <p className="font-medium">Клиент зарегистрирован</p>
-                      <p className="text-sm text-gray-600">{new Date(customer.createdAt).toLocaleString()}</p>
+                      <p className="text-sm text-gray-600">{new Date(customer.data?.createdAt || "").toLocaleString()}</p>
                     </div>
                   </div>
 
-                  {customerInstallments?.data?.map((installment: { id: string; productName: string; totalAmount: string; monthlyPayment: string; status: string; createdAt: string }) => (
+                  {customerInstallments?.data?.items?.map((installment: Installment) => (
                     <div key={installment.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                       <div className="flex-1">
@@ -399,16 +386,13 @@ export default function CustomerDetailPage() {
             <DialogHeader>
               <DialogTitle>Редактировать клиента</DialogTitle>
             </DialogHeader>
-            {editError && <Alert variant="destructive"><AlertDescription>{editError}</AlertDescription></Alert>}
             <CreateOrEditCustomerForm
               editMode
-              initialValues={customer}
+              initialValues={customer.data as Customer}
               onSuccess={() => {
                 setIsEditOpen(false)
-                setEditError(null)
                 queryClient.invalidateQueries({ queryKey: ["customer", id] })
               }}
-              onError={setEditError}
             />
           </DialogContent>
         </Dialog>

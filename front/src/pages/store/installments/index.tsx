@@ -10,13 +10,15 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { useQuery } from "@tanstack/react-query"
 import { installmentsApi } from "@/services/api"
 import { Pagination as ServerPagination } from "@/components/pagination"
+import type { PaginatedApiResponse } from '@/types/api-response'
+import type { Installment } from '@/types/installment'
 
 export default function InstallmentsPage() {
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState("all") // Updated default value to "all"
   const [page, setPage] = useState(1)
 
-  const { data: installments, isLoading } = useQuery({
+  const { data: installments, isLoading } = useQuery<PaginatedApiResponse<Installment>>({
     queryKey: ["installments", { search, status, page }],
     queryFn: () => installmentsApi.getAll({ search, status, page }),
   })
@@ -161,7 +163,7 @@ export default function InstallmentsPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  installments?.data?.map((installment: { id: string; productName: string; totalAmount: string; monthlyPayment: string; status: string; createdAt: string; customer: { firstName: string; lastName: string } } ) => (
+                  installments?.data?.map((installment: Installment) => (
                     <TableRow key={installment.id}>
                       <TableCell className="font-medium">{installment.productName}</TableCell>
                       <TableCell>
