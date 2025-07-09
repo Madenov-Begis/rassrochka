@@ -51,7 +51,6 @@ model Customer {
   updatedAt      DateTime      @updatedAt
   store          Store         @relation(fields: [storeId], references: [id])
   installments   Installment[]
-  blacklistEntry Blacklist?
 
   @@unique([passportSeries, passportNumber])
   @@map("customers")
@@ -90,20 +89,6 @@ model Payment {
   installment   Installment   @relation(fields: [installmentId], references: [id])
 
   @@map("payments")
-}
-
-model Blacklist {
-  id             String   @id @default(cuid())
-  passportSeries String
-  passportNumber String
-  reason         String
-  addedAt        DateTime @default(now())
-  addedByUserId  String
-  customerId     String?  @unique
-  customer       Customer? @relation(fields: [customerId], references: [id])
-
-  @@unique([passportSeries, passportNumber])
-  @@map("blacklist")
 }
 
 model AuditLog {

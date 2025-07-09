@@ -102,17 +102,21 @@ export class CustomersService {
   async searchByPassportGlobal(passport: string) {
     const [series, number] = passport.split(" ")
 
-    return this.prisma.customer.findMany({
+    const clients = await this.prisma.customer.findMany({
       where: {
         passportSeries: series,
         passportNumber: number,
       },
       include: {
         installments: true,
-        blacklistEntry: true,
         store: true,
       },
     })
+
+    // Оставляем только магазины, где есть просрочка или клиент в чёрном списке
+    return clients.filter(
+      c => c.installments.some(inst => inst.status === "overdue")
+    )
   }
 
   async updateBlacklist(storeId: string, id: string, isBlacklisted: boolean) {
@@ -127,6 +131,27 @@ export class CustomersService {
     return this.prisma.customer.update({
       where: { id },
       data: { isBlacklisted },
+    })
+  }
+
+  async update(storeId: string, id: string, updateCustomerDto: any) {
+    // Проверка уникальности паспорта, если меняется серия/номер
+    if (updateCustomerDto.passportSeries && updateCustomerDto.passportNumber) {
+      const exists = await this.prisma.customer.findFirst({
+        where: {
+          storeId,
+          passportSeries: updateCustomerDto.passportSeries,
+          passportNumber: updateCustomerDto.passportNumber,
+          NOT: { id },
+        },
+      })
+      if (exists) {
+        throw new Error('Клиент с таким паспортом уже существует')
+      }
+    }
+    return this.prisma.customer.update({
+      where: { id },
+      data: updateCustomerDto,
     })
   }
 }

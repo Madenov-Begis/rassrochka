@@ -1,14 +1,12 @@
-import { Injectable, NotFoundException, ForbiddenException } from "@nestjs/common"
+import { Injectable, NotFoundException } from "@nestjs/common"
 import { PrismaService } from "../../../prisma/prisma.service"
 import { CreateInstallmentDto } from "./dto/create-installment.dto"
 import { Decimal } from "@prisma/client/runtime/library"
-import { BlacklistService } from '../blacklist/blacklist.service'
 
 @Injectable()
 export class InstallmentsService {
   constructor(
     private prisma: PrismaService,
-    private blacklistService: BlacklistService,
   ) {}
 
   async create(createInstallmentDto: CreateInstallmentDto, storeId: string) {
@@ -17,11 +15,6 @@ export class InstallmentsService {
     // Получаем клиента
     const customer = await this.prisma.customer.findUnique({ where: { id: customerId } })
     if (!customer) throw new NotFoundException('Клиент не найден')
-    // Проверка чёрного списка
-    const check = await this.blacklistService.checkBlacklist(customer.passportSeries, customer.passportNumber)
-    if (check.blacklisted) {
-      throw new ForbiddenException('Клиент находится в чёрном списке и не может получить рассрочку')
-    }
 
     // Расчет рассрочки
     const base = productPrice - downPayment
@@ -170,5 +163,31 @@ export class InstallmentsService {
       where: { installmentId: id },
       orderBy: { dueDate: "asc" },
     })
+  }
+
+  async findByCustomer(storeId: string, customerId: string, page = 1, limit = 10) {
+    page = Number(page)
+    limit = Number(limit)
+    const where = { storeId, customerId }
+    const [installments, total] = await Promise.all([
+      this.prisma.installment.findMany({
+        where,
+        include: {
+          customer: true,
+          payments: true,
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
+      this.prisma.installment.count({ where }),
+    ])
+    return {
+      data: installments,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    }
   }
 }

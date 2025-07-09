@@ -5,22 +5,41 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { customersApi, installmentsApi, checkBlacklist } from "@/services/api"
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query"
+import { customersApi } from "@/services/api"
 import { DashboardSkeleton } from "@/components/loading/dashboard-skeleton"
-import { AddToBlacklistForm } from '../../../components/forms/add-to-blacklist-form'
+import { CreateOrEditCustomerForm } from "@/components/forms/create-customer-form"
+import { Pagination as ServerPagination } from "@/components/pagination"
 import { toast } from "react-toastify"
+
+interface CustomerInstallmentsResponse {
+  data: Array<{
+    id: string;
+    productName: string;
+    totalAmount: string;
+    monthlyPayment: string;
+    status: string;
+    createdAt: string;
+  }>;
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 export default function CustomerDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+  const [installmentsPage, setInstallmentsPage] = useState(1)
+  const installmentsLimit = 10
   const [isBlacklistDialogOpen, setIsBlacklistDialogOpen] = useState(false)
-  const [open, setOpen] = useState(false)
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ["customer", id],
@@ -28,16 +47,11 @@ export default function CustomerDetailPage() {
     enabled: !!id,
   })
 
-  const { data: customerInstallments } = useQuery({
-    queryKey: ["customer-installments", id],
-    queryFn: () => installmentsApi.getAll({ customerId: id as string }),
+  const { data: customerInstallments, isLoading: isInstallmentsLoading } = useQuery<CustomerInstallmentsResponse>({
+    queryKey: ["customer-installments", id, installmentsPage],
+    queryFn: () => customersApi.getInstallments(id as string, { page: installmentsPage, limit: installmentsLimit }),
     enabled: !!id,
-  })
-
-  const { data: blacklist } = useQuery({
-    queryKey: ['blacklist', customer?.passportSeries, customer?.passportNumber],
-    queryFn: () => checkBlacklist(customer?.passportSeries, customer?.passportNumber),
-    enabled: !!customer,
+    placeholderData: { data: [], total: 0, page: installmentsPage, limit: installmentsLimit, totalPages: 1 },
   })
 
   const blacklistMutation = useMutation({
@@ -183,7 +197,7 @@ export default function CustomerDetailPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Личная информация</CardTitle>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
                     <Edit className="h-4 w-4 mr-2" />
                     Редактировать
                   </Button>
@@ -242,44 +256,42 @@ export default function CustomerDetailPage() {
                     <CreditCard className="h-4 w-4 mr-2" />
                     Создать рассрочку
                   </Button>
-
+                  <Button
+                    variant={customer.isBlacklisted ? "outline" : "destructive"}
+                    className="w-full"
+                    onClick={() => setIsBlacklistDialogOpen(true)}
+                  >
+                    <Ban className="h-4 w-4 mr-2" />
+                    {customer.isBlacklisted ? "Разблокировать" : "Заблокировать"}
+                  </Button>
                   <Dialog open={isBlacklistDialogOpen} onOpenChange={setIsBlacklistDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant={customer.isBlacklisted ? "outline" : "destructive"} className="w-full">
-                        <Ban className="h-4 w-4 mr-2" />
-                        {customer.isBlacklisted ? "Разблокировать" : "Заблокировать"}
-                      </Button>
-                    </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>
                           {customer.isBlacklisted ? "Разблокировать клиента" : "Заблокировать клиента"}
                         </DialogTitle>
                       </DialogHeader>
-                      <div className="space-y-4">
-                        <Alert variant={customer.isBlacklisted ? "default" : "destructive"}>
-                          <AlertDescription>
-                            {customer.isBlacklisted
-                              ? "Клиент будет удален из черного списка и сможет оформлять новые рассрочки."
-                              : "Клиент будет добавлен в черный список и не сможет оформлять новые рассрочки во всех магазинах сети."}
-                          </AlertDescription>
-                        </Alert>
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline" onClick={() => setIsBlacklistDialogOpen(false)}>
-                            Отмена
-                          </Button>
-                          <Button
-                            variant={customer.isBlacklisted ? "default" : "destructive"}
-                            onClick={() => blacklistMutation.mutate(!customer.isBlacklisted)}
-                            disabled={blacklistMutation.isPending}
-                          >
-                            {customer.isBlacklisted ? "Разблокировать" : "Заблокировать"}
-                          </Button>
-                        </div>
+                      <Alert variant={customer.isBlacklisted ? "default" : "destructive"}>
+                        <AlertDescription>
+                          {customer.isBlacklisted
+                            ? "Клиент будет удалён из чёрного списка и сможет оформлять новые рассрочки."
+                            : "Клиент будет добавлен в чёрный список и не сможет оформлять новые рассрочки во всех магазинах сети."}
+                        </AlertDescription>
+                      </Alert>
+                      <div className="flex justify-end gap-2 pt-4">
+                        <Button variant="outline" onClick={() => setIsBlacklistDialogOpen(false)}>
+                          Отмена
+                        </Button>
+                        <Button
+                          variant={customer.isBlacklisted ? "default" : "destructive"}
+                          onClick={() => blacklistMutation.mutate(!customer.isBlacklisted)}
+                          disabled={blacklistMutation.isPending}
+                        >
+                          {customer.isBlacklisted ? "Разблокировать" : "Заблокировать"}
+                        </Button>
                       </div>
                     </DialogContent>
                   </Dialog>
-
                   {overdueInstallments > 0 && (
                     <Alert>
                       <AlertTriangle className="h-4 w-4" />
@@ -293,44 +305,59 @@ export default function CustomerDetailPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="installments">
+          <TabsContent value="installments" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Рассрочки клиента</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Товар</TableHead>
-                      <TableHead>Сумма</TableHead>
-                      <TableHead>Ежемесячно</TableHead>
-                      <TableHead>Статус</TableHead>
-                      <TableHead>Дата создания</TableHead>
-                      <TableHead>Действия</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {customerInstallments?.data?.map((installment: { id: string; productName: string; totalAmount: string; monthlyPayment: string; status: string; createdAt: string }) => (
-                      <TableRow key={installment.id}>
-                        <TableCell className="font-medium">{installment.productName}</TableCell>
-                        <TableCell>{Number(installment.totalAmount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</TableCell>
-                        <TableCell>{Number(installment.monthlyPayment).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</TableCell>
-                        <TableCell>{getStatusBadge(installment.status)}</TableCell>
-                        <TableCell>{new Date(installment.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/store/installments/${installment.id}`)}
-                          >
-                            Подробнее
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                {isInstallmentsLoading ? (
+                  <div className="py-8 text-center text-muted-foreground">Загрузка...</div>
+                ) : customerInstallments?.data?.length === 0 ? (
+                  <div className="py-8 text-center text-muted-foreground">Нет рассрочек</div>
+                ) : (
+                  <>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Товар</TableHead>
+                          <TableHead>Сумма</TableHead>
+                          <TableHead>Ежемесячно</TableHead>
+                          <TableHead>Статус</TableHead>
+                          <TableHead>Дата</TableHead>
+                          <TableHead></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {customerInstallments?.data?.map((installment) => (
+                          <TableRow key={installment.id}>
+                            <TableCell className="font-medium">{installment.productName}</TableCell>
+                            <TableCell>{Number(installment.totalAmount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</TableCell>
+                            <TableCell>{Number(installment.monthlyPayment).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</TableCell>
+                            <TableCell>{getStatusBadge(installment.status)}</TableCell>
+                            <TableCell>{new Date(installment.createdAt).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate(`/store/installments/${installment.id}`)}
+                              >
+                                Подробнее
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    <ServerPagination
+                      page={customerInstallments?.page || 1}
+                      total={customerInstallments?.total || 0}
+                      limit={installmentsLimit}
+                      onPageChange={setInstallmentsPage}
+                      className="flex justify-center mt-6"
+                    />
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -366,25 +393,25 @@ export default function CustomerDetailPage() {
           </TabsContent>
         </Tabs>
 
-        {blacklist?.blacklisted ? (
-          <div className="text-red-600 font-semibold">Клиент в чёрном списке</div>
-        ) : (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button variant="destructive">Добавить в чёрный список</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <AddToBlacklistForm
-                passportSeries={customer.passportSeries}
-                passportNumber={customer.passportNumber}
-                customerId={customer.id}
-                onSuccess={() => {
-                  setOpen(false)
-                }}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
+        {/* Модалка редактирования клиента */}
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Редактировать клиента</DialogTitle>
+            </DialogHeader>
+            {editError && <Alert variant="destructive"><AlertDescription>{editError}</AlertDescription></Alert>}
+            <CreateOrEditCustomerForm
+              editMode
+              initialValues={customer}
+              onSuccess={() => {
+                setIsEditOpen(false)
+                setEditError(null)
+                queryClient.invalidateQueries({ queryKey: ["customer", id] })
+              }}
+              onError={setEditError}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   )

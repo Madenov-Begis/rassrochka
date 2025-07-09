@@ -9,31 +9,30 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { useQuery } from "@tanstack/react-query"
 import { customersApi } from "@/services/api"
-import { CreateCustomerForm } from "@/components/forms/create-customer-form"
+import { CreateOrEditCustomerForm } from "@/components/forms/create-customer-form"
 import { Pagination as ServerPagination } from "@/components/pagination"
 import { useDebounce } from "@/hooks/use-debounce"
+import { useNavigate } from "react-router-dom"
 
-interface CustomerWithStoreAndInstallments {
+interface Customer {
   id: string;
   firstName: string;
   lastName: string;
   middleName?: string;
   isBlacklisted: boolean;
   store?: { name: string };
-  installments?: { status: string }[];
+  installments?: Array<{ status: string }>;
+  phone?: string;
+  passportSeries?: string;
+  passportNumber?: string;
+  createdAt?: string;
 }
 
 export default function CustomersPage() {
+  const navigate = useNavigate()
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
-
-  // Глобальный поиск по паспорту
-  const [globalPassportSeries, setGlobalPassportSeries] = useState("")
-  const [globalPassportNumber, setGlobalPassportNumber] = useState("")
-  const [globalPassportTouched, setGlobalPassportTouched] = useState(false)
-  const [globalPassportError, setGlobalPassportError] = useState("")
-  const [globalPassportQuery, setGlobalPassportQuery] = useState("")
 
   const debouncedSearch = useDebounce(search, 400)
 
@@ -42,46 +41,17 @@ export default function CustomersPage() {
     queryFn: () => customersApi.getAll({ search: debouncedSearch, page }),
   })
 
-  const {
-    data: globalPassportResults,
-    isLoading: isGlobalPassportLoading,
-    refetch: refetchGlobalPassport,
-  } = useQuery< CustomerWithStoreAndInstallments[] | null >({
-    queryKey: ["customers-global-passport", globalPassportQuery],
-    queryFn: async () => {
-      if (!globalPassportQuery) return null
-      return customersApi.searchByPassportGlobal(globalPassportQuery)
-    },
-    enabled: !!globalPassportQuery,
-  })
-
-  const getCustomerStatus = (customer: any) => {
+  const getCustomerStatus = (customer: { isBlacklisted: boolean; installments?: Array<{ status: string }> }) => {
     if (customer.isBlacklisted) {
       return <Badge className="bg-red-100 text-red-800">Черный список</Badge>
     }
 
-    const hasOverdue = customer.installments?.some((inst: any) => inst.status === "overdue")
+    const hasOverdue = customer.installments?.some((inst) => inst.status === "overdue")
     if (hasOverdue) {
       return <Badge className="bg-yellow-100 text-yellow-800">Есть просрочки</Badge>
     }
 
     return <Badge className="bg-green-100 text-green-800">Активен</Badge>
-  }
-
-  const handleGlobalPassportSearch = () => {
-    setGlobalPassportTouched(true)
-    // Валидация: серия — 2 латинские буквы, номер — 7 цифр
-    if (!/^[A-Z]{2}$/i.test(globalPassportSeries)) {
-      setGlobalPassportError("Серия паспорта: 2 латинские буквы")
-      return
-    }
-    if (!/^\d{7}$/.test(globalPassportNumber)) {
-      setGlobalPassportError("Номер паспорта: 7 цифр")
-      return
-    }
-    setGlobalPassportError("")
-    setGlobalPassportQuery(`${globalPassportSeries.toUpperCase()} ${globalPassportNumber}`)
-    refetchGlobalPassport()
   }
 
   return (
@@ -93,20 +63,23 @@ export default function CustomersPage() {
             <h1 className="text-3xl font-bold">Клиенты</h1>
             <p className="text-gray-600">Управление базой клиентов магазина</p>
           </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Добавить клиента
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Новый клиент</DialogTitle>
-              </DialogHeader>
-              <CreateCustomerForm onSuccess={() => setIsCreateOpen(false)} />
-            </DialogContent>
-          </Dialog>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("search-passport")}>Глобальный поиск по паспорту</Button>
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Добавить клиента
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Новый клиент</DialogTitle>
+                </DialogHeader>
+                <CreateOrEditCustomerForm onSuccess={() => setIsCreateOpen(false)} />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -156,65 +129,6 @@ export default function CustomersPage() {
           </Card>
         </div>
 
-        {/* Глобальный поиск по паспорту */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Глобальный поиск по паспорту (по всем магазинам)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row gap-2 items-end">
-              <div>
-                <Input
-                  placeholder="Серия (AA)"
-                  value={globalPassportSeries}
-                  maxLength={2}
-                  onChange={e => setGlobalPassportSeries(e.target.value.toUpperCase())}
-                  className="w-24"
-                />
-              </div>
-              <div>
-                <Input
-                  placeholder="Номер (1234567)"
-                  value={globalPassportNumber}
-                  maxLength={7}
-                  onChange={e => setGlobalPassportNumber(e.target.value.replace(/\D/g, ""))}
-                  className="w-32"
-                />
-              </div>
-              <Button onClick={handleGlobalPassportSearch}>
-                Проверить
-              </Button>
-            </div>
-            {globalPassportTouched && globalPassportError && (
-              <p className="text-sm text-red-600 mt-2">{globalPassportError}</p>
-            )}
-            {/* Результаты поиска */}
-            {isGlobalPassportLoading && <p className="mt-2">Поиск...</p>}
-            {globalPassportResults && (
-              <div className="mt-4 space-y-2">
-                {globalPassportResults.length === 0 ? (
-                  <p className="text-green-700">Клиент с таким паспортом не найден ни в одном магазине.</p>
-                ) : (
-                  <>
-                    <p className="font-semibold">Найдено в магазинах:</p>
-                    <ul className="space-y-1">
-                      {globalPassportResults.map((c) => (
-                        <li key={c.id} className="border rounded p-2 flex flex-col md:flex-row md:items-center gap-2">
-                          <span className="font-medium">{c.lastName} {c.firstName} {c.middleName} ({c.store?.name})</span>
-                          {c.isBlacklisted && <Badge className="bg-red-100 text-red-800 ml-2">Чёрный список</Badge>}
-                          {c.installments?.some((i) => i.status === "overdue") && (
-                            <Badge className="bg-yellow-100 text-yellow-800 ml-2">Есть просрочки</Badge>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Search */}
         <Card>
           <CardHeader>
@@ -259,7 +173,7 @@ export default function CustomersPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  customers?.data?.map((customer: any) => (
+                  customers?.data?.map((customer: Customer) => (
                     <TableRow key={customer.id}>
                       <TableCell className="font-medium">
                         {customer.lastName} {customer.firstName} {customer.middleName}
@@ -270,9 +184,9 @@ export default function CustomersPage() {
                       </TableCell>
                       <TableCell>{customer.installments?.length || 0}</TableCell>
                       <TableCell>{getCustomerStatus(customer)}</TableCell>
-                      <TableCell>{new Date(customer.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>{customer.createdAt ? new Date(String(customer.createdAt)).toLocaleDateString() : ''}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`${customer.id}`)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>

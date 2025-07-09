@@ -71,10 +71,6 @@ export default function StoreDashboard() {
             <h1 className="text-3xl font-bold">Дашборд магазина</h1>
             <p className="text-gray-600">Обзор текущей деятельности и показателей</p>
           </div>
-          <Button onClick={() => navigate("/store/installments/create")}>
-            <CreditCard className="h-4 w-4 mr-2" />
-            Новая рассрочка
-          </Button>
         </div>
 
         {/* Main Stats */}

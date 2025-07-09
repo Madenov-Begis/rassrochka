@@ -87,6 +87,10 @@ export const customersApi = {
     api.get(`api/client/customers/search`, { params: { passport } }).then((r) => r.data),
   searchByPassportGlobal: (passport: string) =>
     api.get(`api/client/customers/search-global`, { params: { passport } }).then((r) => r.data),
+  update: (id: string, data: Record<string, unknown>) =>
+    api.put(`api/client/customers/${id}`, data).then((r) => r.data),
+  getInstallments: (id: string, params?: Record<string, string | number>) =>
+    api.get(`api/client/customers/${id}/installments`, { params }).then((r) => r.data),
 }
 
 export const installmentsApi = {
@@ -110,27 +114,5 @@ export const paymentsApi = {
     api.put(`api/client/payments/${paymentId}/mark-paid`).then((r) => r.data),
   getOverdue: () => api.get("api/client/payments/overdue").then((r) => r.data),
   getUpcoming: () => api.get("api/client/payments/upcoming").then((r) => r.data),
-}
-
-/**
- * Проверка клиента по паспорту в чёрном списке
- */
-export async function checkBlacklist(passportSeries: string, passportNumber: string) {
-  const res = await fetch(`/api/client/blacklist/check?series=${passportSeries}&number=${passportNumber}`)
-  if (!res.ok) throw new Error('Ошибка проверки чёрного списка')
-  return res.json()
-}
-
-/**
- * Добавление клиента в чёрный список
- */
-export async function addToBlacklist(data: { passportSeries: string; passportNumber: string; reason: string; customerId?: string }) {
-  const res = await fetch('/api/client/blacklist', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error('Ошибка добавления в чёрный список')
-  return res.json()
 }
 

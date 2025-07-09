@@ -7,38 +7,62 @@ import { Loader2 } from "lucide-react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { customersApi } from "@/services/api"
 import InputMask from "react-input-mask"
-interface CreateCustomerFormProps {
+
+interface CreateOrEditCustomerFormProps {
   onSuccess: () => void
+  onError?: (error: string) => void
+  initialValues?: Record<string, unknown>
+  editMode?: boolean
 }
 
-export function CreateCustomerForm({ onSuccess }: CreateCustomerFormProps) {
-  
+export function CreateOrEditCustomerForm({ onSuccess, onError, initialValues, editMode }: CreateOrEditCustomerFormProps) {
   const queryClient = useQueryClient()
-
   const {
     register,
     handleSubmit,
     formState: { errors },
     control,
-  } = useForm()
+    reset,
+  } = useForm({
+    defaultValues: initialValues || {},
+  })
 
-  const createMutation = useMutation({
-    mutationFn: customersApi.create,
+  const mutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) =>
+      editMode && initialValues?.id
+        ? customersApi.update(initialValues.id as string, data)
+        : customersApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] })
       onSuccess()
     },
+    onError: (error: unknown) => {
+      if (onError && error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data) {
+        // @ts-ignore
+        onError(error.response.data.message || "Ошибка при сохранении клиента")
+      } else if (onError) {
+        onError("Ошибка при сохранении клиента")
+      }
+    },
   })
 
+  const allowedFields = [
+    "firstName", "lastName", "middleName",
+    "passportSeries", "passportNumber", "phone", "address"
+  ];
+
   const onSubmit = (data: Record<string, unknown>) => {
-    createMutation.mutate(data)
+    const filteredData = Object.fromEntries(
+      Object.entries(data).filter(([key]) => allowedFields.includes(key))
+    );
+    mutation.mutate(filteredData)
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {createMutation.error && (
+      {mutation.error && (
         <Alert variant="destructive">
-          <AlertDescription>Ошибка при создании клиента. Проверьте данные и попробуйте снова.</AlertDescription>
+          <AlertDescription>{mutation.error instanceof Error ? mutation.error.message : "Ошибка при сохранении клиента"}</AlertDescription>
         </Alert>
       )}
 
@@ -117,7 +141,7 @@ export function CreateCustomerForm({ onSuccess }: CreateCustomerFormProps) {
               value={field.value || ''}
               onChange={field.onChange}
               onBlur={field.onBlur}
-              disabled={createMutation.isPending}
+              disabled={mutation.isPending}
             >
               {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => (
                 <Input
@@ -146,9 +170,9 @@ export function CreateCustomerForm({ onSuccess }: CreateCustomerFormProps) {
         <Button type="button" variant="outline" onClick={onSuccess}>
           Отмена
         </Button>
-        <Button type="submit" disabled={createMutation.isPending}>
-          {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Создать клиента
+        <Button type="submit" disabled={mutation.isPending}>
+          {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {editMode ? "Сохранить" : "Создать клиента"}
         </Button>
       </div>
     </form>
