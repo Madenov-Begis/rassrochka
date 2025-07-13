@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Param, UseGuards, Req } from "@nestjs/common"
+import { Controller, Get, Put, Param, UseGuards, Req, Query, Body } from "@nestjs/common"
 import { PaymentsService } from "./payments.service"
 import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guard"
 import { RolesGuard } from "../../auth/guards/roles.guard"
@@ -18,13 +18,22 @@ export class PaymentsController {
     return this.paymentsService.getUpcoming(req.user.storeId)
   }
 
+  @Get()
+  async findAll(@Req() req: any, @Query() query: any) {
+    return this.paymentsService.findAll(req.user.storeId, query)
+  }
+
   @Get(":id")
   async findOne(@Req() req: any, @Param('id') id: number) {
     return this.paymentsService.findOne(req.user.storeId, id)
   }
 
   @Put(":id/mark-paid")
-  async markPaid(@Req() req: any, @Param('id') id: number) {
-    return this.paymentsService.markPaid(req.user.storeId, id)
+  async markPaid(
+    @Req() req: any,
+    @Param('id') id: number,
+    @Body() body: { amount: number }
+  ) {
+    return this.paymentsService.markPaid(req.user.storeId, id, body.amount)
   }
 }

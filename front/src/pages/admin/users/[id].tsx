@@ -105,23 +105,23 @@ export default function UserDetailPage() {
             Назад
           </Button>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold">{user.login}</h1>
+            <h1 className="text-3xl font-bold">{user.data.login}</h1>
             <p className="text-gray-600">ID: <span className="font-mono text-xs">{user.id}</span></p>
           </div>
           <div className="flex items-center gap-2">
-            {getRoleBadge(user.role)}
+            {getRoleBadge(user.data.role)}
             <Badge
               className={
-                user.status === "active"
+                user.data.status === "active"
                   ? "bg-green-100 text-green-800"
-                  : user.status === "blocked"
+                  : user.data.status === "blocked"
                   ? "bg-red-100 text-red-800"
                   : "bg-gray-100 text-gray-600"
-              }
-            >
-              {user.status === "active"
+                  }
+                >
+              {user.data.status === "active"
                 ? "Активен"
-                : user.status === "blocked"
+                : user.data.status === "blocked"
                 ? "Заблокирован"
                 : "Неактивен"}
             </Badge>
@@ -133,10 +133,10 @@ export default function UserDetailPage() {
                 </DialogHeader>
                 <UserForm
                   initialValues={{
-                    login: user.login,
-                    role: user.role,
-                    status: user.status,
-                    storeId: user.storeId || "",
+                    login: user.data.login,
+                    role: user.data.role,
+                    status: user.data.status,
+                    storeId: user.data.storeId || "",
                   }}
                   onSubmit={handleEditUser}
                   mode="edit"
@@ -170,7 +170,7 @@ export default function UserDetailPage() {
                   <div className="flex items-center gap-3">
                     <User className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="font-medium">{user.login}</p>
+                      <p className="font-medium">{user.data.login}</p>
                       <p className="text-sm text-gray-600">Логин</p>
                     </div>
                   </div>
@@ -178,17 +178,17 @@ export default function UserDetailPage() {
                   <div className="flex items-center gap-3">
                     <Shield className="h-5 w-5 text-gray-400" />
                     <div>
-                      <div className="flex items-center gap-2">{getRoleBadge(user.role)}</div>
+                      <div className="flex items-center gap-2">{getRoleBadge(user.data.role)}</div>
                       <p className="text-sm text-gray-600">Роль в системе</p>
                     </div>
                   </div>
 
-                  {user.store && (
+                  {user.data.store && (
                     <div className="flex items-center gap-3">
                       <Store className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="font-medium">{user.store.name}</p>
-                        <p className="text-sm text-gray-600">{user.store.address}</p>
+                        <p className="font-medium">{user.data.store.name}</p>
+                        <p className="text-sm text-gray-600">{user.data.store.address}</p>
                       </div>
                     </div>
                   )}
@@ -197,17 +197,17 @@ export default function UserDetailPage() {
                     <div className="flex items-center gap-3">
                       <Calendar className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="font-medium">{new Date(user.createdAt).toLocaleDateString()}</p>
+                        <p className="font-medium">{new Date(user.data.createdAt).toLocaleDateString()}</p>
                         <p className="text-sm text-gray-600">Дата создания</p>
                       </div>
                     </div>
                   </div>
 
-                  {user.lastLogin && (
+                  {user.data.lastLogin && (
                     <div className="flex items-center gap-3">
                       <Calendar className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="font-medium">{new Date(user.lastLogin).toLocaleString()}</p>
+                        <p className="font-medium">{new Date(user.data.lastLogin).toLocaleString()}</p>
                         <p className="text-sm text-gray-600">Последний вход</p>
                       </div>
                     </div>
@@ -223,8 +223,8 @@ export default function UserDetailPage() {
                 <CardContent className="space-y-4">
                   <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button variant={user.isActive ? "destructive" : "default"} className="w-full">
-                        {user.isActive ? (
+                      <Button variant={user.data.isActive ? "destructive" : "default"} className="w-full">
+                        {user.data.isActive ? (
                           <>
                             <Lock className="h-4 w-4 mr-2" />
                             Заблокировать пользователя
@@ -240,13 +240,13 @@ export default function UserDetailPage() {
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>
-                          {user.isActive ? "Заблокировать пользователя" : "Активировать пользователя"}
+                          {user.data.isActive ? "Заблокировать пользователя" : "Активировать пользователя"}
                         </DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4">
-                        <Alert variant={user.isActive ? "destructive" : "default"}>
+                        <Alert variant={user.data.isActive ? "destructive" : "default"}>
                           <AlertDescription>
-                            {user.isActive
+                            {user.data.isActive
                               ? "Пользователь будет заблокирован и не сможет войти в систему."
                               : "Пользователь будет активирован и сможет войти в систему."}
                           </AlertDescription>
@@ -256,11 +256,11 @@ export default function UserDetailPage() {
                             Отмена
                           </Button>
                           <Button
-                            variant={user.isActive ? "destructive" : "default"}
-                            onClick={() => updateStatusMutation.mutate(!user.isActive)}
+                            variant={user.data.isActive ? "destructive" : "default"}
+                            onClick={() => updateStatusMutation.mutate(!user.data.isActive)}
                             disabled={updateStatusMutation.isPending}
                           >
-                            {user.isActive ? "Заблокировать" : "Активировать"}
+                            {user.data.isActive ? "Заблокировать" : "Активировать"}
                           </Button>
                         </div>
                       </div>
@@ -277,7 +277,7 @@ export default function UserDetailPage() {
                     Изменить роль
                   </Button>
 
-                  {!user.isActive && (
+                  {!user.data.isActive && (
                     <Alert>
                       <Lock className="h-4 w-4" />
                       <AlertDescription>Пользователь заблокирован и не может войти в систему.</AlertDescription>
@@ -317,7 +317,7 @@ export default function UserDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {user.role === "admin" ? (
+                  {user.data.role === "admin" ? (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                         <span>Управление магазинами</span>

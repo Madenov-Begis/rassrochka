@@ -19,6 +19,7 @@ import { adminApi } from '../../services/api';
 import { toast } from 'react-toastify';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
+import type { ApiError } from '@/types/api-response';
 
 const statusOptions = [
   { value: 'active', label: 'Активен' },
@@ -66,15 +67,15 @@ export function StoreForm({ initial, onSuccess, storeId }: StoreFormProps) {
       if (onSuccess) onSuccess();
     } catch (e: unknown) {
       // AxiosError
-      const err = e as import('axios').AxiosError<Record<string, any>>;
-      const data = err?.response?.data;
-      if (data?.errors) {
-        const errors = data.errors as Record<keyof StoreFormValues, string[]>;
+      const err = e as ApiError
+        
+      if (err?.errors) {
+        const errors = err.errors as Record<keyof StoreFormValues, string[]>;
         Object.entries(errors).forEach(([field, messages]) => {
           setError(field as keyof StoreFormValues, { type: 'server', message: messages.join(', ') });
         });
       } else {
-        const message = data?.message || err.message || 'Ошибка';
+        const message = err?.message || err.message || 'Ошибка';
         toast.error('Ошибка: ' + message);
       }
     }

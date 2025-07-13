@@ -1,4 +1,4 @@
-import { Store, Users, CreditCard, AlertTriangle, TrendingUp, DollarSign } from "lucide-react"
+import { Store as StoreIcon, Users, CreditCard, AlertTriangle, TrendingUp, DollarSign } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query"
 import { adminApi } from "@/services/api"
 import { useNavigate } from "react-router-dom"
 import { DashboardSkeleton } from "@/components/loading/dashboard-skeleton"
+import type { Store , TopStore } from "@/types/admin/store"
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -58,7 +59,7 @@ export default function AdminDashboard() {
   }
 
   const networkTarget = 10000000 // 10M UZS цель сети на месяц
-  const currentProgress = (stats?.totalRevenue / networkTarget) * 100 || 0
+  const currentProgress = (stats?.data?.totalRevenue / networkTarget) * 100 || 0
 
   return (
     <DashboardLayout>
@@ -76,11 +77,11 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Всего магазинов</CardTitle>
-              <Store className="h-4 w-4 text-muted-foreground" />
+              <StoreIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalStores || 0}</div>
-              <p className="text-xs text-muted-foreground">Активных: {stats?.activeStores || 0}</p>
+              <div className="text-2xl font-bold">{stats?.data?.totalStores || 0}</div>
+              <p className="text-xs text-muted-foreground">Активных: {stats?.data?.activeStores || 0}</p>
             </CardContent>
           </Card>
 
@@ -90,8 +91,8 @@ export default function AdminDashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
-              <p className="text-xs text-muted-foreground">+{stats?.newUsersThisMonth || 0} за месяц</p>
+              <div className="text-2xl font-bold">{stats?.data?.totalUsers || 0}</div>
+              <p className="text-xs text-muted-foreground">+{stats?.data?.newUsersThisMonth || 0} за месяц</p>
             </CardContent>
           </Card>
 
@@ -101,8 +102,8 @@ export default function AdminDashboard() {
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalInstallments || 0}</div>
-              <p className="text-xs text-muted-foreground">Активных: {stats?.activeInstallments || 0}</p>
+              <div className="text-2xl font-bold">{stats?.data?.totalInstallments || 0}</div>
+              <p className="text-xs text-muted-foreground">Активных: {stats?.data?.activeInstallments || 0}</p>
             </CardContent>
           </Card>
 
@@ -112,9 +113,9 @@ export default function AdminDashboard() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(stats?.totalRevenue || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
+              <div className="text-2xl font-bold">{(stats?.data?.totalRevenue || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
               <p className="text-xs text-muted-foreground">
-                <TrendingUp className="h-3 w-3 inline mr-1" />+{stats?.revenueGrowth || 0}% к прошлому месяцу
+                <TrendingUp className="h-3 w-3 inline mr-1" />+{stats?.data?.revenueGrowth || 0}% к прошлому месяцу
               </p>
             </CardContent>
           </Card>
@@ -129,13 +130,13 @@ export default function AdminDashboard() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>
-                  {(stats?.totalRevenue || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS из {(networkTarget).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS
+                  {(stats?.data?.totalRevenue || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS из {(networkTarget).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS
                 </span>
                 <span>{currentProgress.toFixed(1)}%</span>
               </div>
               <Progress value={currentProgress} className="h-2" />
               <p className="text-xs text-muted-foreground">
-                Осталось {(networkTarget - (stats?.totalRevenue || 0)).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS до цели
+                Осталось {(networkTarget - (stats?.data?.totalRevenue || 0)).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS до цели
               </p>
             </div>
           </CardContent>
@@ -179,7 +180,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {topStores?.map((store: any, index: number) => (
+                {topStores?.data.map((store: TopStore, index: number) => (
                   <div key={store.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -215,7 +216,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {recentStores?.data?.map((store: any) => (
+                  {recentStores?.data?.items?.map((store: Store) => (
                     <TableRow
                       key={store.id}
                       className="cursor-pointer hover:bg-gray-50"

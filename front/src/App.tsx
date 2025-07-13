@@ -18,6 +18,7 @@ import AdminStoreDetail from "./pages/admin/stores/[id]"
 import AdminUsers from "./pages/admin/users"
 import AdminUserDetail from "./pages/admin/users/[id]"
 import SearchPassportPage from "./pages/store/customers/search-passport"
+import CreateInstallmentPage from "./pages/store/installments/create"
 
 // Protected Route Component
 function ProtectedRoute({
@@ -50,6 +51,7 @@ function App() {
     { path: "/store/customers/:id", element: <StoreCustomerDetail /> },
     { path: "/store/customers/search-passport", element: <SearchPassportPage /> },
     { path: "/store/installments", element: <StoreInstallments /> },
+    { path: "/store/installments/create", element: <CreateInstallmentPage /> },
     { path: "/store/installments/:id", element: <StoreInstallmentDetail /> },
     { path: "/store/payments", element: <StorePayments /> },
     { path: "/store/payments/calendar", element: <PaymentsCalendar /> },

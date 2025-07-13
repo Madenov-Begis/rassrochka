@@ -4,41 +4,63 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { CheckCircle, AlertTriangle, Zap } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { useQuery } from "@tanstack/react-query"
 import { installmentsApi } from "@/services/api"
 import { Pagination as ServerPagination } from "@/components/pagination"
-import type { PaginatedApiResponse } from '@/types/api-response'
-import type { Installment } from '@/types/installment'
+import type { PaginatedApiResponse, ApiError } from '@/types/api-response'
+import type { Installment } from "@/types/store/installments"
+import { useDebounce } from "@/hooks/use-debounce"
+import { useNavigate } from "react-router-dom"
 
 export default function InstallmentsPage() {
   const [search, setSearch] = useState("")
+  const  debouncedValue  = useDebounce(search, 400)
   const [status, setStatus] = useState("all") // Updated default value to "all"
   const [page, setPage] = useState(1)
-
-  const { data: installments, isLoading } = useQuery<PaginatedApiResponse<Installment>>({
-    queryKey: ["installments", { search, status, page }],
-    queryFn: () => installmentsApi.getAll({ search, status, page }),
+  const navigate = useNavigate()
+  const { data: installments, isLoading } = useQuery<PaginatedApiResponse<Installment[]>, ApiError>({
+    queryKey: ["installments", { search: debouncedValue, status, page }],
+    queryFn: () => installmentsApi.getAll({ search:debouncedValue, status, page }),
   })
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      active: "bg-green-100 text-green-800",
-      completed: "bg-blue-100 text-blue-800",
-      overdue: "bg-red-100 text-red-800",
-      early_payoff: "bg-purple-100 text-purple-800",
-    }
-
-    const labels = {
-      active: "Активна",
-      completed: "Завершена",
-      overdue: "Просрочка",
-      early_payoff: "Досрочно",
-    }
-
-    return <Badge className={variants[status as keyof typeof variants]}>{labels[status as keyof typeof labels]}</Badge>
+    const config = {
+      active: {
+        label: "Активна",
+        color: "bg-green-100 text-green-800",
+        icon: <CheckCircle className="w-4 h-4 mr-1 text-green-600" />,
+        description: "Рассрочка активна, платежи по графику."
+      },
+      completed: {
+        label: "Завершена",
+        color: "bg-blue-100 text-blue-800",
+        icon: <CheckCircle className="w-4 h-4 mr-1 text-blue-600" />,
+        description: "Рассрочка полностью выплачена."
+      },
+      overdue: {
+        label: "Просрочка",
+        color: "bg-red-100 text-red-800",
+        icon: <AlertTriangle className="w-4 h-4 mr-1 text-red-600" />,
+        description: "Есть просроченные платежи! Требует внимания."
+      },
+      early_payoff: {
+        label: "Досрочно",
+        color: "bg-purple-100 text-purple-800",
+        icon: <Zap className="w-4 h-4 mr-1 text-purple-600" />,
+        description: "Рассрочка закрыта досрочно."
+      },
+    };
+    const c = config[status as keyof typeof config] || config.active;
+    return (
+      <Badge className={c.color} title={c.description}>
+        {c.icon}
+        {c.label}
+      </Badge>
+    );
   }
 
   return (
@@ -50,9 +72,9 @@ export default function InstallmentsPage() {
             <h1 className="text-3xl font-bold">Рассрочки</h1>
             <p className="text-gray-600">Управление рассрочками клиентов</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => navigate("/store/installments/create") }>
             <Plus className="h-4 w-4" />
-            Новая рассрочка
+            Добавить рассрочку
           </Button>
         </div>
 
@@ -163,11 +185,11 @@ export default function InstallmentsPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  installments?.data?.map((installment: Installment) => (
+                    installments?.data?.items?.map((installment: Installment) => (
                     <TableRow key={installment.id}>
                       <TableCell className="font-medium">{installment.productName}</TableCell>
                       <TableCell>
-                        {installment.customer.firstName} {installment.customer.lastName}
+                          {installment.customer.firstName} {installment.customer.lastName}
                       </TableCell>
                       <TableCell>{Number(installment.totalAmount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</TableCell>
                       <TableCell>{Number(installment.monthlyPayment).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</TableCell>
@@ -175,7 +197,7 @@ export default function InstallmentsPage() {
                       <TableCell>{new Date(installment.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/store/installments/${installment.id}`)}>
                             <Eye className="h-4 w-4" />
                           </Button>
                           {installment.status === "active" && (
@@ -192,7 +214,7 @@ export default function InstallmentsPage() {
             </Table>
             <ServerPagination
               page={page}
-              total={installments?.total || 0}
+              total={installments?.data?.totalPages || 0}
               limit={10}
               onPageChange={setPage}
               className="flex justify-center mt-6"

@@ -11,6 +11,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { paymentsApi, installmentsApi } from "@/services/api"
 import { DashboardSkeleton } from "@/components/loading/dashboard-skeleton"
 import { toast } from "react-toastify"
+import type { ApiError, ApiResponse } from "@/types/api-response"
+import type { Payment } from "@/types/store/payments"
+import type { Installment } from "@/types/store/installments"
 
 export default function PaymentDetailPage() {
   const { id } = useParams()
@@ -18,23 +21,23 @@ export default function PaymentDetailPage() {
   const queryClient = useQueryClient()
   const [isMarkPaidOpen, setIsMarkPaidOpen] = useState(false)
 
-  const { data: payment, isLoading } = useQuery({
+  const { data: payment, isLoading } = useQuery<ApiResponse<Payment>, ApiError>({
     queryKey: ["payment", id],
     queryFn: () => paymentsApi.getOne(id as string),
     enabled: !!id,
   })
 
-  const { data: installment } = useQuery({
-    queryKey: ["installment", payment?.installmentId],
-    queryFn: () => installmentsApi.getOne(payment.installmentId),
-    enabled: !!payment?.installmentId,
+  const { data: installment } = useQuery<ApiResponse<Installment>, ApiError>({
+    queryKey: ["installment", payment?.data?.installmentId],
+    queryFn: () => installmentsApi.getOne(payment?.data?.installmentId as string),
+    enabled: !!payment?.data?.installmentId,
   })
 
   const markPaidMutation = useMutation({
     mutationFn: paymentsApi.markPaid,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment", id] })
-      queryClient.invalidateQueries({ queryKey: ["installment", payment?.installmentId] })
+      queryClient.invalidateQueries({ queryKey: ["installment", payment?.data?.installmentId] })
       setIsMarkPaidOpen(false)
       toast.success("Платеж оплачен")
     },
@@ -79,9 +82,9 @@ export default function PaymentDetailPage() {
     return <Badge className={variants[status as keyof typeof variants]}>{labels[status as keyof typeof labels]}</Badge>
   }
 
-  const isOverdue = payment.status === "pending" && new Date(payment.dueDate) < new Date()
+  const isOverdue = payment.data?.status === "pending" && new Date(payment.data?.dueDate) < new Date()
   const daysOverdue = isOverdue
-    ? Math.ceil((Date.now() - new Date(payment.dueDate).getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.ceil((Date.now() - new Date(payment.data?.dueDate).getTime()) / (1000 * 60 * 60 * 24))
     : 0
 
   return (
@@ -94,10 +97,10 @@ export default function PaymentDetailPage() {
             Назад
           </Button>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold">Платеж #{payment.id.slice(-8)}</h1>
+            <h1 className="text-3xl font-bold">Платеж #{payment.data?.id}</h1>
             <p className="text-gray-600">Детали платежа</p>
           </div>
-          {getStatusBadge(payment.status)}
+          {getStatusBadge(payment.data?.status)}
         </div>
 
         {/* Alert for overdue */}
@@ -121,24 +124,24 @@ export default function PaymentDetailPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Сумма:</span>
-                <span className="font-bold text-lg">{Number(payment.amount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
+                <span className="font-bold text-lg">{Number(payment.data?.amount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
               </div>
 
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Дата платежа:</span>
-                <span className="font-medium">{new Date(payment.dueDate).toLocaleDateString()}</span>
+                <span className="font-medium">{new Date(payment.data?.dueDate).toLocaleDateString()}</span>
               </div>
 
-              {payment.paidDate && (
+              {payment.data?.paidDate && (
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Дата оплаты:</span>
-                  <span className="font-medium text-green-600">{new Date(payment.paidDate).toLocaleDateString()}</span>
+                  <span className="font-medium text-green-600">{new Date(payment.data?.paidDate).toLocaleDateString()}</span>
                 </div>
               )}
 
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Статус:</span>
-                {getStatusBadge(payment.status)}
+                {getStatusBadge(payment.data?.status)}
               </div>
 
               {isOverdue && (
@@ -160,25 +163,25 @@ export default function PaymentDetailPage() {
               <CardContent className="space-y-4">
                 <div>
                   <p className="font-medium">
-                    {installment.customer.lastName} {installment.customer.firstName}
+                    {installment.data?.customer.lastName} {installment.data?.customer.firstName}
                   </p>
                   <p className="text-sm text-gray-600">ФИО</p>
                 </div>
 
                 <div>
-                  <p className="font-medium">{installment.customer.phone}</p>
+                  <p className="font-medium">{installment.data?.customer.phone}</p>
                   <p className="text-sm text-gray-600">Телефон</p>
                 </div>
 
                 <div>
-                  <p className="font-medium">{installment.customer.address}</p>
+                  <p className="font-medium">{installment.data?.customer.address}</p>
                   <p className="text-sm text-gray-600">Адрес</p>
                 </div>
 
                 <Button
                   variant="outline"
                   className="w-full bg-transparent"
-                  onClick={() => navigate(`/store/customers/${installment.customer.id}`)}
+                  onClick={() => navigate(`/store/customers/${installment.data?.customer.id}`)}
                 >
                   Профиль клиента
                 </Button>
@@ -195,29 +198,29 @@ export default function PaymentDetailPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="font-medium">{installment.productName}</p>
+                  <p className="font-medium">{installment.data?.productName}</p>
                   <p className="text-sm text-gray-600">Товар</p>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Общая сумма:</span>
-                  <span className="font-medium">{Number(installment.totalAmount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
+                  <span className="font-medium">{Number(installment.data?.totalAmount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
                 </div>
 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Ежемесячно:</span>
-                  <span className="font-medium">{Number(installment.monthlyPayment).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
-                </div>
+                  <span className="font-medium">{Number(installment.data?.monthlyPayment).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
+                </div>  
 
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Срок:</span>
-                  <span className="font-medium">{installment.months} мес.</span>
+                  <span className="font-medium">{installment.data?.months} мес.</span>
                 </div>
 
                 <Button
                   variant="outline"
                   className="w-full bg-transparent"
-                  onClick={() => navigate(`/store/installments/${installment.id}`)}
+                  onClick={() => navigate(`/store/installments/${installment.data?.id}`)}
                 >
                   Детали рассрочки
                 </Button>
@@ -227,7 +230,7 @@ export default function PaymentDetailPage() {
         </div>
 
         {/* Actions */}
-        {payment.status === "pending" && (
+        {payment.data?.status === "pending" && (
           <Card>
             <CardHeader>
               <CardTitle>Действия</CardTitle>
@@ -256,7 +259,7 @@ export default function PaymentDetailPage() {
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex justify-between mb-2">
                           <span>Сумма платежа:</span>
-                          <span className="font-bold">{Number(payment.amount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
+                          <span className="font-bold">{Number(payment.data?.amount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Дата оплаты:</span>
@@ -269,7 +272,7 @@ export default function PaymentDetailPage() {
                           Отмена
                         </Button>
                         <Button
-                          onClick={() => markPaidMutation.mutate(payment.id)}
+                          onClick={() => markPaidMutation.mutate(payment.data?.id as string)}
                           disabled={markPaidMutation.isPending}
                         >
                           {markPaidMutation.isPending ? "Обработка..." : "Подтвердить оплату"}
@@ -281,7 +284,7 @@ export default function PaymentDetailPage() {
 
                 {installment?.customer && (
                   <Button variant="outline">
-                    <a href={`tel:${installment.customer.phone}`} className="flex items-center">
+                    <a href={`tel:${installment.data?.customer.phone}`} className="flex items-center">
                       Позвонить клиенту
                     </a>
                   </Button>
@@ -302,16 +305,16 @@ export default function PaymentDetailPage() {
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <div className="flex-1">
                   <p className="font-medium">Платеж создан</p>
-                  <p className="text-sm text-gray-600">{new Date(payment.createdAt).toLocaleString()}</p>
+                  <p className="text-sm text-gray-600">{new Date(payment.data?. createdAt).toLocaleString()}</p>
                 </div>
               </div>
 
-              {payment.status === "paid" && payment.paidDate && (
+              {payment.data?.status === "paid" && payment.data?.paidDate && (
                 <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <div className="flex-1">
                     <p className="font-medium">Платеж оплачен</p>
-                    <p className="text-sm text-gray-600">{new Date(payment.paidDate).toLocaleString()}</p>
+                    <p className="text-sm text-gray-600">{new Date(payment.data?.paidDate).toLocaleString()}</p>
                   </div>
                   <CheckCircle className="h-5 w-5 text-green-500" />
                 </div>
@@ -323,7 +326,7 @@ export default function PaymentDetailPage() {
                   <div className="flex-1">
                     <p className="font-medium">Платеж просрочен</p>
                     <p className="text-sm text-gray-600">
-                      Просрочка с {new Date(payment.dueDate).toLocaleDateString()}
+                      Просрочка с {new Date(payment.data?.dueDate).toLocaleDateString()}
                     </p>
                   </div>
                   <AlertTriangle className="h-5 w-5 text-red-500" />

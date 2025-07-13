@@ -118,10 +118,10 @@ export default function StoreDetailPage() {
             Назад
           </Button>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold">{store.name}</h1>
-            <p className="text-gray-600">Управление магазином #{store.id.slice(-8)}</p>
+            <h1 className="text-3xl font-bold">{store.data.name}</h1>
+            <p className="text-gray-600">Управление магазином #{store.data.id.slice(-8)}</p>
           </div>
-          {getStatusBadge(store.status)}
+          {getStatusBadge(store.data.status)}
         </div>
 
         {/* Stats Cards */}
@@ -194,8 +194,8 @@ export default function StoreDetailPage() {
                     </DialogTrigger>
                     <DialogContent>
                       <StoreForm
-                        storeId={store.id}
-                        initial={{ name: store.name, address: store.address, phone: store.phone, status: store.status }}
+                        storeId={store.data.id}
+                        initial={{ name: store.data.name, address: store.data.address, phone: store.data.phone, status: store.data.status }}
                         onSuccess={() => { setEditOpen(false); window.location.reload(); }}
                       />
                     </DialogContent>
@@ -205,7 +205,7 @@ export default function StoreDetailPage() {
                   <div className="flex items-center gap-3">
                     <Store className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="font-medium">{store.name}</p>
+                      <p className="font-medium">{store.data.name}</p>
                       <p className="text-sm text-gray-600">Название магазина</p>
                     </div>
                   </div>
@@ -213,7 +213,7 @@ export default function StoreDetailPage() {
                   <div className="flex items-center gap-3">
                     <MapPin className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="font-medium">{store.address}</p>
+                      <p className="font-medium">{store.data.address}</p>
                       <p className="text-sm text-gray-600">Адрес</p>
                     </div>
                   </div>
@@ -221,19 +221,19 @@ export default function StoreDetailPage() {
                   <div className="flex items-center gap-3">
                     <Phone className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="font-medium">{store.phone}</p>
+                      <p className="font-medium">{store.data.phone}</p>
                       <p className="text-sm text-gray-600">Телефон</p>
                     </div>
                   </div>
 
                   <div className="border-t pt-4">
                     <p className="text-sm text-gray-600 mb-2">Дата создания</p>
-                    <p className="font-medium">{new Date(store.createdAt).toLocaleDateString()}</p>
+                    <p className="font-medium">{new Date(store.data.createdAt).toLocaleDateString()}</p>
                   </div>
 
                   <div className="border-t pt-4">
                     <p className="text-sm text-gray-600 mb-2">Последнее обновление</p>
-                    <p className="font-medium">{new Date(store.updatedAt).toLocaleDateString()}</p>
+                    <p className="font-medium">{new Date(store.data.updatedAt).toLocaleDateString()}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -247,7 +247,7 @@ export default function StoreDetailPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Текущий статус</label>
                     <Select
-                      value={store.status}
+                      value={store.data?.status}
                       onValueChange={(value) => updateStatusMutation.mutate(value)}
                       disabled={updateStatusMutation.isPending}
                     >
@@ -262,7 +262,7 @@ export default function StoreDetailPage() {
                     </Select>
                   </div>
 
-                  {store.status === "payment_overdue" && (
+                  {store.data?.status === "payment_overdue" && (
                     <Alert>
                       <AlertTriangle className="h-4 w-4" />
                       <AlertDescription>
@@ -271,7 +271,7 @@ export default function StoreDetailPage() {
                     </Alert>
                   )}
 
-                  {store.status === "blocked" && (
+                  {store.data?.status === "blocked" && (
                     <Alert variant="destructive">
                       <AlertTriangle className="h-4 w-4" />
                       <AlertDescription>Магазин заблокирован. Новые рассрочки недоступны.</AlertDescription>
@@ -279,7 +279,7 @@ export default function StoreDetailPage() {
                   )}
 
                   <div className="pt-4 border-t">
-                    <Button className="w-full" onClick={() => navigate(`/admin/stores/${store.id}/settings`)}>
+                    <Button className="w-full" onClick={() => navigate(`/admin/stores/${store.data?.id}/settings`)}>
                       <Settings className="h-4 w-4 mr-2" />
                       Настройки магазина
                     </Button>
@@ -293,7 +293,7 @@ export default function StoreDetailPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Пользователи магазина</CardTitle>
-                <Button onClick={() => navigate(`/admin/users/create?storeId=${store.id}`)}>
+                <Button onClick={() => navigate(`/admin/users/create?storeId=${store.data?.id}`)}>
                   <Users className="h-4 w-4 mr-2" />
                   Добавить пользователя
                 </Button>
@@ -310,7 +310,7 @@ export default function StoreDetailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {storeUsers?.data?.map((user: any) => (
+                    {storeUsers?.data?.items.map((user: any) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.login}</TableCell>
                         <TableCell>
@@ -351,7 +351,7 @@ export default function StoreDetailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {storeInstallments?.data?.map((installment: any) => (
+                    {storeInstallments?.data?.items.map((installment: any) => (
                       <TableRow key={installment.id}>
                         <TableCell className="font-medium">{installment.productName}</TableCell>
                         <TableCell>
@@ -369,9 +369,9 @@ export default function StoreDetailPage() {
                     ))}
                   </TableBody>
                 </Table>
-                {storeInstallments?.total > 10 && (
+                {storeInstallments?.data?.total > 10 && (
                   <div className="mt-4 text-center">
-                    <Button variant="outline">Показать все ({storeInstallments.total})</Button>
+                    <Button variant="outline">Показать все ({storeInstallments.data.total})</Button>
                   </div>
                 )}
               </CardContent>
@@ -389,21 +389,21 @@ export default function StoreDetailPage() {
                     <div className="flex justify-between items-center">
                       <span>Январь 2024</span>
                       <div className="text-right">
-                        <div className="font-bold">{(storeStats?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
+                        <div className="font-bold">{(storeStats?.data?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
                         <div className="text-sm text-gray-600">12 рассрочек</div>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Февраль 2024</span>
                       <div className="text-right">
-                        <div className="font-bold">{(storeStats?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
+                        <div className="font-bold">{(storeStats?.data?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
                         <div className="text-sm text-gray-600">9 рассрочек</div>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Март 2024</span>
                       <div className="text-right">
-                        <div className="font-bold">{(storeStats?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
+                        <div className="font-bold">{(storeStats?.data?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
                         <div className="text-sm text-gray-600">15 рассрочек</div>
                       </div>
                     </div>
@@ -421,21 +421,21 @@ export default function StoreDetailPage() {
                       <span>iPhone 15 Pro</span>
                       <div className="text-right">
                         <div className="font-bold">8 шт</div>
-                        <div className="text-sm text-gray-600">{(storeStats?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
+                        <div className="text-sm text-gray-600">{(storeStats?.data?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Samsung Galaxy S24</span>
                       <div className="text-right">
                         <div className="font-bold">6 шт</div>
-                        <div className="text-sm text-gray-600">{(storeStats?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
+                        <div className="text-sm text-gray-600">{(storeStats?.data?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>MacBook Air M2</span>
                       <div className="text-right">
                         <div className="font-bold">4 шт</div>
-                        <div className="text-sm text-gray-600">{(storeStats?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
+                        <div className="text-sm text-gray-600">{(storeStats?.data?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
                       </div>
                     </div>
                   </div>

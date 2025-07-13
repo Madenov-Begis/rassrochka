@@ -73,8 +73,8 @@ export default function AdminUsers() {
     },
   })
 
-  const users = data?.data || []
-  const total = data?.total || 0
+  const users = data?.data?.items || []
+  const total = data?.data?.total || 0
 
   const getRoleBadge = (role: string) => {
     const roleConfig = {

@@ -1,3 +1,9 @@
+/**
+ * @file: badge.tsx
+ * @description: Универсальный компонент бейджа для статусов
+ * @dependencies: React, clsx
+ * @created: 2024-07-11
+ */
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 

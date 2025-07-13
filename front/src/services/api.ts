@@ -1,8 +1,10 @@
 import axios from "axios"
 import { useAuthStore } from "../store/auth-store"
 import type { ApiResponse, PaginatedApiResponse, ResponseWithMessage } from '../types/api-response'
-import type { Customer, CustomerBody, GlobalSearchPassport } from "@/types/store/customers"
+import type { Customer, CustomerBody, CustomerList, GlobalSearchPassport } from "@/types/store/customers"
 import type { Installment } from "@/types/store/installments"
+import type { Payment } from "@/types/store/payments"
+import type { Store } from "@/types/admin/store"
 
 const API_BASE = "http://localhost:3000"
 
@@ -27,10 +29,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // if (error.response && error.response.status === 401) {
-    //   useAuthStore.getState().logout()
-    //   window.location.href = "/login"
-    // }
+    if (error.response && error.response.status === 401) {
+      useAuthStore.getState().logout()
+      window.location.href = "/login"
+    }
     return Promise.reject(error.response?.data)
   }
 )
@@ -46,8 +48,8 @@ export const authApi = {
 export const adminApi = {
   // Stores
   getStores: (params?: Record<string, string | number>) =>
-    api.get("api/admin/stores", { params }).then((r) => r.data),
-  getStore: (id: string) => api.get(`api/admin/stores/${id}`).then((r) => r.data),
+    api.get<PaginatedApiResponse<Store[]>>("api/admin/stores", { params }).then((r) => r),
+  getStore: (id: string) => api.get<ApiResponse<Store>>(`api/admin/stores/${id}`).then((r) => r.data),
   createStore: (data: Record<string, unknown>) =>
     api.post("api/admin/stores", data).then((r) => r.data),
   updateStore: (id: string, data: Record<string, unknown>) =>
@@ -92,11 +94,13 @@ export const customersApi = {
     api.put<ResponseWithMessage>(`api/client/customers/${id}`, data).then((r) => r.data),
   getInstallments: (id: string, params?: Record<string, string | number>) =>
     api.get<PaginatedApiResponse<Installment[]>>(`api/client/customers/${id}/installments`, { params }).then((r) => r.data),
+  list: () =>
+    api.get<ApiResponse<CustomerList[]>>("api/client/customers/list").then((r) => r.data),
 }
 
 export const installmentsApi = {
   getAll: (params?: Record<string, string | number>) =>
-    api.get("api/client/installments", { params }).then((r) => r.data),
+    api.get<PaginatedApiResponse<Installment[]>>(`api/client/installments`, { params }).then((r) => r.data),
   create: (data: Record<string, unknown>) =>
     api.post("api/client/installments", data).then((r) => r.data),
   getOne: (id: string) => api.get(`api/client/installments/${id}`).then((r) => r.data),
@@ -107,12 +111,12 @@ export const installmentsApi = {
 
 export const paymentsApi = {
   getAll: (params?: Record<string, string | number>) =>
-    api.get("api/client/payments", { params }).then((r) => r.data),
-  getOne: (id: string) => api.get(`api/client/payments/${id}`).then((r) => r.data),
+    api.get<PaginatedApiResponse<Payment[]>>("api/client/payments", { params }).then((r) => r.data),
+  getOne: (id: string) => api.get<ApiResponse<Payment>>(`api/client/payments/${id}`).then((r) => r.data),
   getByInstallment: (installmentId: string) =>
     api.get(`api/client/installments/${installmentId}/payments`).then((r) => r.data),
-  markPaid: (paymentId: string) =>
-    api.put(`api/client/payments/${paymentId}/mark-paid`).then((r) => r.data),
+  markPaid: (paymentId: string, amount: number) =>
+    api.put(`api/client/payments/${paymentId}/mark-paid`, { amount }).then((r) => r.data),
   getOverdue: () => api.get("api/client/payments/overdue").then((r) => r.data),
   getUpcoming: () => api.get("api/client/payments/upcoming").then((r) => r.data),
 }

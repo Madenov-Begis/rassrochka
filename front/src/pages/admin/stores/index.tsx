@@ -16,16 +16,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { useDebounce } from "@/hooks/use-debounce";
 import { Pagination as ServerPagination } from "@/components/pagination";
-
-export type Store = {
-  id: string;
-  name: string;
-  address: string;
-  phone: string;
-  status: string;
-  users: number;
-  createdAt: string;
-};
+import type { ApiError, PaginatedApiResponse } from "@/types/api-response"
+import type { Store } from "@/types/admin/store"
 
 export default function AdminStoresPage() {
   const navigate = useNavigate()
@@ -56,13 +48,14 @@ export default function AdminStoresPage() {
     },
   });
 
-  const { data: storesData, isLoading } = useQuery({
+  const { data: storesData, isLoading } = useQuery<PaginatedApiResponse<Store[]>, ApiError>({
     queryKey: ["admin-stores", { search: debouncedSearch, page }],
-    queryFn: () => adminApi.getStores({ search: debouncedSearch, page, limit: 10 }),
+    queryFn: () => adminApi.getStores({ search: debouncedSearch, page, limit: 10 }).then((r) => r.data),
   })
 
-  const stores: Store[] = storesData?.data || [];
-  const totalStores = storesData?.total || 0;
+
+  const stores = storesData?.data?.items || [];
+  const totalStores = storesData?.data?.total || 0;
   const limit = 10;
   const activeStores = stores.filter((store) => store.status === "active").length;
   const overdueStores = stores.filter((store) => store.status === "payment_overdue").length;

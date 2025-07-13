@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Put, UseGuards, Query } from "@nestjs/common"
+import { Controller, Get, Post, Param, Put, UseGuards, Query, Body } from "@nestjs/common"
 import { InstallmentsService } from "./installments.service"
 import { CreateInstallmentDto } from "./dto/create-installment.dto"
 import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guard"
@@ -13,7 +13,7 @@ export class InstallmentsController {
   constructor(private installmentsService: InstallmentsService) {}
 
   @Post()
-  create(createInstallmentDto: CreateInstallmentDto, @CurrentUser() user: any) {
+  create(@Body() createInstallmentDto: CreateInstallmentDto, @CurrentUser() user: any) {
     return this.installmentsService.create(createInstallmentDto, user.storeId)
   }
 

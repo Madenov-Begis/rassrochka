@@ -17,9 +17,9 @@ export class AuthService {
       include: { store: true },
     })
 
-    // bcrypt.hash('admin123', 10).then((hashed) => {
-    //   console.log('Hashed password:', hashed);
-    // });
+    bcrypt.hash('admin123', 10).then((hashed) => {
+      console.log('Hashed password:', hashed);
+    });
 
     if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
       throw new UnauthorizedException("Invalid credentials")

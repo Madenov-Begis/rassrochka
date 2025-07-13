@@ -45,7 +45,7 @@ export class StoresService {
     }))
 
     return {
-      data: storesWithUserCount,
+      items: storesWithUserCount,
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -164,7 +164,7 @@ export class StoresService {
     ])
 
     return {
-      data: installments,
+      items: installments,
       total,
       page,
       totalPages: Math.ceil(total / limit),

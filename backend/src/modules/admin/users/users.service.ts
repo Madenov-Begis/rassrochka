@@ -50,7 +50,7 @@ export class UsersService {
     ])
 
     return {
-      data: users,
+      items: users,
       total,
       page,
       totalPages: Math.ceil(total / limit),

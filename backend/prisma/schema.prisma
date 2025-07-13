@@ -87,8 +87,17 @@ model Payment {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   installment   Installment   @relation(fields: [installmentId], references: [id])
+  paymentHistory PaymentHistory[]
 
   @@map("payments")
+}
+
+model PaymentHistory {
+  id         Int      @id @default(autoincrement())
+  paymentId  Int
+  amount     Decimal  @db.Decimal(10, 2)
+  paidDate   DateTime @default(now())
+  payment    Payment  @relation(fields: [paymentId], references: [id])
 }
 
 enum Role {

@@ -1,3 +1,9 @@
+/**
+ * @file: card.tsx
+ * @description: Универсальный компонент карточки для UI
+ * @dependencies: React, clsx
+ * @created: 2024-07-11
+ */
 import * as React from "react"
 
 import { cn } from "@/lib/utils"

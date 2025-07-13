@@ -7,14 +7,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { CheckCircle, Clock, AlertTriangle } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TableSkeleton } from "@/components/loading/table-skeleton"
 import { Search, Calendar, Eye, Plus } from "lucide-react"
 import { format } from "date-fns"
 import { ru } from "date-fns/locale"
 import { Pagination as ServerPagination } from "@/components/pagination"
-import type { PaginatedApiResponse } from '@/types/api-response'
-import type { Payment } from '@/types/payment'
+import type { PaginatedApiResponse, ApiError } from '@/types/api-response'
+import type { Payment } from "@/types/store/payments"
 
 export default function StorePayments() {
   const navigate = useNavigate()
@@ -22,23 +23,42 @@ export default function StorePayments() {
   const [page, setPage] = useState(1)
   const limit = 10
 
-  const { data, isLoading, error } = useQuery<PaginatedApiResponse<Payment>>({
+  const { data, isLoading, error } = useQuery<PaginatedApiResponse<Payment[]>, ApiError>({
     queryKey: ["payments", { page, limit, search }],
       queryFn: () => paymentsApi.getAll({ page, limit, search }),
   })
 
-  const payments = data?.data?.data || []
+  const payments = data?.data?.items || []
   const totalPages = Math.ceil((data?.data?.total || 0) / limit)
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: { label: "Ожидает", variant: "secondary" as const },
-      paid: { label: "Оплачен", variant: "default" as const },
-      overdue: { label: "Просрочен", variant: "destructive" as const },
-    }
-
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending
-    return <Badge variant={config.variant}>{config.label}</Badge>
+    const config = {
+      pending: {
+        label: "Ожидает",
+        color: "bg-gray-100 text-gray-800",
+        icon: <Clock className="w-4 h-4 mr-1 text-gray-500" />,
+        description: "Платеж ожидает оплаты."
+      },
+      paid: {
+        label: "Оплачен",
+        color: "bg-green-100 text-green-800",
+        icon: <CheckCircle className="w-4 h-4 mr-1 text-green-600" />,
+        description: "Платеж успешно оплачен."
+      },
+      overdue: {
+        label: "Просрочен",
+        color: "bg-red-100 text-red-800",
+        icon: <AlertTriangle className="w-4 h-4 mr-1 text-red-600" />,
+        description: "Платеж просрочен! Требует внимания."
+      },
+    };
+    const c = config[status as keyof typeof config] || config.pending;
+    return (
+      <Badge className={c.color} title={c.description}>
+        {c.icon}
+        {c.label}
+      </Badge>
+    );
   }
 
   return (
@@ -101,8 +121,8 @@ export default function StorePayments() {
                   <TableBody>
                     {payments.map((payment: Payment) => (
                       <TableRow key={payment.id}>
-                        <TableCell className="font-medium">{payment.installment?.customer?.name}</TableCell>
-                        <TableCell>#{payment.installment?.id.slice(-8)}</TableCell>
+                        <TableCell className="font-medium">{payment.installment?.customer?.firstName} {payment.installment?.customer?.lastName} {payment.installment?.customer?.middleName ? ` ${payment.installment?.customer?.middleName}` : ""}</TableCell>
+                        <TableCell>#{payment.installment?.id}</TableCell>
                         <TableCell>{Number(payment.amount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</TableCell>
                         <TableCell>{format(new Date(payment.dueDate), "dd MMM yyyy", { locale: ru })}</TableCell>
                         <TableCell>{getStatusBadge(payment.status)}</TableCell>

@@ -159,4 +159,22 @@ export class CustomersService {
       data: updateCustomerDto,
     })
   }
+
+  async list(storeId: number) {
+    const customers = await this.prisma.customer.findMany({
+      where: { storeId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        middleName: true,
+        phone: true,
+      },
+    })
+    return customers.map(c => ({
+      id: c.id,
+      fullname: [c.lastName, c.firstName, c.middleName, c.phone].filter(Boolean).join(' '),
+    }))
+  }
 }

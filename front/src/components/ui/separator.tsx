@@ -1,4 +1,9 @@
- 
+/**
+ * @file: separator.tsx
+ * @description: Горизонтальный или вертикальный разделитель для UI
+ * @dependencies: React, clsx
+ * @created: 2024-07-11
+ */
 
 import * as React from "react"
 import * as SeparatorPrimitive from "@radix-ui/react-separator"

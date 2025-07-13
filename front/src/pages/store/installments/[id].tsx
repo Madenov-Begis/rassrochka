@@ -4,34 +4,42 @@ import { ArrowLeft, CreditCard, DollarSign, User, Phone, MapPin } from "lucide-r
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { installmentsApi, paymentsApi } from "@/services/api"
 import { toast } from "react-toastify"
+import type { ApiError, ApiResponse } from "@/types/api-response"
+import type { Installment } from "@/types/store/installments"
+import type { Payment } from "@/types/store/payments"
+import { PaymentTimelineItem } from "@/components/forms/PaymentTimelineItem"
+import { InputAmount } from "@/components/ui/input-amount"
 
 export default function InstallmentDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [isEarlyPayoffOpen, setIsEarlyPayoffOpen] = useState(false)
+  const [payModal, setPayModal] = useState<{ open: boolean; paymentId: number | null }>({ open: false, paymentId: null })
+  const [payAmount, setPayAmount] = useState<string>("")
+  const [payLoading, setPayLoading] = useState(false)
+  const [payError, setPayError] = useState<string>("")
 
-  const { data: installment, isLoading } = useQuery({
-    queryKey: ["installment", id],
-    queryFn: () => installmentsApi.getOne(id as string),
+  const { data: installment, isLoading } = useQuery<ApiResponse<Installment>>({
+    queryKey: ["installment", id?.toString() ?? ""],
+    queryFn: () => installmentsApi.getOne(id?.toString() ?? ""),
     enabled: !!id,
   })
 
-  const { data: payments } = useQuery({
-    queryKey: ["payments", id],
-    queryFn: () => paymentsApi.getByInstallment(id as string),
+  const { data: payments } = useQuery<ApiResponse<Payment[]>>({
+    queryKey: ["payments", id?.toString() ?? ""],
+    queryFn: () => paymentsApi.getByInstallment(id?.toString() ?? ""),
     enabled: !!id,
   })
 
   const markPaidMutation = useMutation({
-    mutationFn: paymentsApi.markPaid,
+    mutationFn: ({ paymentId, amount }: { paymentId: number, amount: number }) => paymentsApi.markPaid(paymentId.toString(), amount),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments", id] })
       queryClient.invalidateQueries({ queryKey: ["installment", id] })
@@ -67,24 +75,6 @@ export default function InstallmentDetailPage() {
     return <Badge className={variants[status as keyof typeof variants]}>{labels[status as keyof typeof labels]}</Badge>
   }
 
-  const getPaymentStatusBadge = (status: string) => {
-    const variants = {
-      pending: "bg-yellow-100 text-yellow-800",
-      paid: "bg-green-100 text-green-800",
-      overdue: "bg-red-100 text-red-800",
-      cancelled: "bg-gray-100 text-gray-800",
-    }
-
-    const labels = {
-      pending: "Ожидает",
-      paid: "Оплачен",
-      overdue: "Просрочка",
-      cancelled: "Отменен",
-    }
-
-    return <Badge className={variants[status as keyof typeof variants]}>{labels[status as keyof typeof labels]}</Badge>
-  }
-
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -115,6 +105,44 @@ export default function InstallmentDetailPage() {
     )
   }
 
+  // Остаток по рассрочке
+  const remaining = payments?.data?.filter((p: Payment) => p.status === "pending" || p.status === "overdue").reduce((sum, p) => sum + Number(p.amount), 0) || 0
+
+  const handlePay = async () => {
+    if (!payModal.paymentId || !payAmount) return
+    const amount = Number(payAmount)
+    if (isNaN(amount) || amount <= 0) {
+      setPayError("Введите корректную сумму")
+      return
+    }
+    setPayLoading(true)
+    setPayError("")
+    try {
+      await markPaidMutation.mutateAsync({ paymentId: payModal.paymentId, amount })
+      setPayModal({ open: false, paymentId: null })
+      setPayAmount("")
+    } catch (e: unknown) {
+      const err = e as ApiError
+      if (err?.errors) {
+        setPayError(err.errors.amount[0] || "Ошибка оплаты")
+      } else {
+        setPayError("Ошибка оплаты")
+      }
+    } finally {
+      setPayLoading(false)
+    }
+  }
+
+  // Проверка наличия просроченных платежей
+  const hasOverdue = payments?.data?.some((p: Payment) => p.status === "overdue")
+
+  // Основной долг
+  const base = Number(installment?.data?.productPrice) - Number(installment?.data?.downPayment)
+  // Сумма всех оплат по paymentHistory
+  const allPaymentHistory = payments?.data?.flatMap((p: Payment) => p.paymentHistory || []) || []
+  const totalPaid = allPaymentHistory.reduce((sum, h) => sum + Number(h.amount), 0)
+  const remainingBase = Math.max(0, base - totalPaid)
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -125,11 +153,10 @@ export default function InstallmentDetailPage() {
             Назад
           </Button>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold">{installment.productName}</h1>
-            <p className="text-gray-600">Детали рассрочки #{installment.id.slice(-8)}</p>
+            <h1 className="text-3xl font-bold">{installment?.data?.productName}</h1>
           </div>
-          {getStatusBadge(installment.status)}
-        </div>
+          {getStatusBadge(installment?.data?.status ?? "")}
+        </div>  
 
         {/* Main Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -141,15 +168,15 @@ export default function InstallmentDetailPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="font-semibold">
-                {installment.customer.lastName} {installment.customer.firstName}
+                {installment?.data?.customer.lastName} {installment?.data?.customer.firstName}
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <Phone className="h-3 w-3 mr-1" />
-                {installment.customer.phone}
+                {installment?.data?.customer.phone || "-"}
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <MapPin className="h-3 w-3 mr-1" />
-                {installment.customer.address}
+                {installment?.data?.customer.address || "-"}
               </div>
             </CardContent>
           </Card>
@@ -163,19 +190,19 @@ export default function InstallmentDetailPage() {
             <CardContent className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm">Стоимость:</span>
-                <span className="font-medium">{Number(installment.productPrice).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
+                <span className="font-medium">{Number(installment?.data?.productPrice ?? 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Первый взнос:</span>
-                <span className="font-medium">{Number(installment.downPayment).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
+                <span className="font-medium">{Number(installment?.data?.downPayment ?? 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Процентная ставка:</span>
-                <span className="font-medium">{Number(installment.interestRate)}%</span>
+                <span className="font-medium">{Number(installment?.data?.interestRate ?? 0)}%</span>
               </div>
               <div className="flex justify-between border-t pt-2">
                 <span className="text-sm font-medium">Общая сумма:</span>
-                <span className="font-bold">{Number(installment.totalAmount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
+                <span className="font-bold">{Number(installment?.data?.totalAmount ?? 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
               </div>
             </CardContent>
           </Card>
@@ -189,38 +216,51 @@ export default function InstallmentDetailPage() {
             <CardContent className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm">Ежемесячно:</span>
-                <span className="font-medium">{Number(installment.monthlyPayment).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
+                <span className="font-medium">{Number(installment?.data?.monthlyPayment ?? 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Срок:</span>
-                <span className="font-medium">{installment.months} мес.</span>
+                <span className="font-medium">{installment?.data?.months ?? '-'} мес.</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Оплачено:</span>
                 <span className="font-medium text-green-600">
-                  {payments?.data?.filter((p: { status: string }) => p.status === "paid").length || 0} из {installment.months}
+                  {payments?.data?.filter((p: { status: string }) => p.status === "paid").length || 0} из {installment?.data?.months}
                 </span>
               </div>
               <div className="flex justify-between border-t pt-2">
                 <span className="text-sm">Создана:</span>
-                <span className="font-medium">{new Date(installment.createdAt).toLocaleDateString()}</span>
+                <span className="font-medium">{new Date(installment?.data?.createdAt ?? "").toLocaleDateString()}</span>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Actions */}
-        {installment.status === "active" && (
+        {installment?.data?.status === "active" && (
           <Card>
             <CardHeader>
               <CardTitle>Действия</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-4">
+                <Button
+                  variant="outline"
+                  disabled={hasOverdue}
+                  onClick={() => {
+                    if (!hasOverdue) setIsEarlyPayoffOpen(true)
+                  }}
+                >
+                  Досрочное погашение
+                </Button>
+                {hasOverdue && (
+                  <Alert variant="destructive">
+                    <AlertDescription>
+                      Для досрочного погашения сначала оплатите все просроченные платежи.
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <Dialog open={isEarlyPayoffOpen} onOpenChange={setIsEarlyPayoffOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline">Досрочное погашение</Button>
-                  </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Досрочное погашение рассрочки</DialogTitle>
@@ -228,17 +268,37 @@ export default function InstallmentDetailPage() {
                     <div className="space-y-4">
                       <Alert>
                         <AlertDescription>
-                          При досрочном погашении клиент доплачивает только основную сумму без процентов. Все
-                          неоплаченные платежи будут отменены.
+                          При досрочном погашении клиент доплачивает только основную сумму без процентов. Все неоплаченные платежи будут отменены.
                         </AlertDescription>
                       </Alert>
+                      {/* Основной долг */}
+                      <div className="text-center text-base">
+                        Основной долг: <span className="font-bold text-blue-700">{base.toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
+                      </div>
+                      <div className="text-center text-base">
+                        Уже оплачено: <span className="font-bold text-green-700">{totalPaid.toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
+                      </div>
+                      <div className="text-center text-base">
+                        Остаток основного долга: <span className="font-bold text-red-700">{remainingBase.toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
+                      </div>
+                      {earlyPayoffMutation.isPending ? (
+                        <div className="text-center text-gray-500 py-4">Рассчитываем сумму к погашению...</div>
+                      ) : earlyPayoffMutation.data && typeof earlyPayoffMutation.data.remainingAmount === "number" ? (
+                        earlyPayoffMutation.data.remainingAmount > 0 ? (
+                          <div className="text-center text-lg font-bold">
+                            Сумма к досрочному погашению: <span className="text-blue-700">{earlyPayoffMutation.data.remainingAmount.toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
+                          </div>
+                        ) : (
+                          <div className="text-center text-green-600 font-semibold">Вся основная сумма уже оплачена</div>
+                        )
+                      ) : null}
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setIsEarlyPayoffOpen(false)}>
+                        <Button variant="outline" onClick={() => setIsEarlyPayoffOpen(false)} disabled={earlyPayoffMutation.isPending}>
                           Отмена
                         </Button>
                         <Button
-                          onClick={() => earlyPayoffMutation.mutate(installment.id)}
-                          disabled={earlyPayoffMutation.isPending}
+                          onClick={() => earlyPayoffMutation.mutate(installment?.data?.id.toString() ?? "")}
+                          disabled={earlyPayoffMutation.isPending || (earlyPayoffMutation.data && earlyPayoffMutation.data.remainingAmount === 0)}
                         >
                           Подтвердить
                         </Button>
@@ -251,48 +311,54 @@ export default function InstallmentDetailPage() {
           </Card>
         )}
 
-        {/* Payments Table */}
+        {/* Остаток по рассрочке */}
+        <div className="flex justify-end mb-2">
+          <span className="text-base font-semibold">Остаток по рассрочке: </span>
+          <span className="ml-2 text-lg font-bold text-blue-700">{Number(remaining).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</span>
+        </div>
+
+        {/* Payments Timeline */}
         <Card>
           <CardHeader>
             <CardTitle>График платежей</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>№</TableHead>
-                  <TableHead>Дата платежа</TableHead>
-                  <TableHead>Сумма</TableHead>
-                  <TableHead>Статус</TableHead>
-                  <TableHead>Дата оплаты</TableHead>
-                  <TableHead>Действия</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments?.data?.map((payment: { id: string; dueDate: string; amount: string; status: string; paidDate: string }, index: number) => (
-                  <TableRow key={payment.id}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>{new Date(payment.dueDate).toLocaleDateString()}</TableCell>
-                    <TableCell>{Number(payment.amount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</TableCell>
-                    <TableCell>{getPaymentStatusBadge(payment.status)}</TableCell>
-                    <TableCell>{payment.paidDate ? new Date(payment.paidDate).toLocaleDateString() : "—"}</TableCell>
-                    <TableCell>
-                      {payment.status === "pending" && (
-                        <Button
-                          size="sm"
-                          onClick={() => markPaidMutation.mutate(payment.id)}
-                          disabled={markPaidMutation.isPending}
-                        >
-                          Отметить оплаченным
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="flex flex-col gap-0 relative">
+              {payments?.data?.map((payment: Payment, index: number) => (
+                <PaymentTimelineItem
+                  key={payment.id}
+                  payment={payment}
+                  index={index}
+                  onPay={(paymentId) => setPayModal({ open: true, paymentId })}
+                  payLoading={payLoading}
+                />
+              ))}
+            </div>
           </CardContent>
         </Card>
+
+        {/* Модалка оплаты */}
+        <Dialog open={payModal.open} onOpenChange={(open) => { setPayModal({ open, paymentId: open ? payModal.paymentId : null }); setPayError("") }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Оплата платежа</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <InputAmount
+                min={1}
+                placeholder="Введите сумму оплаты"
+                value={payAmount}
+                onChange={setPayAmount}
+                autoFocus
+              />
+              {payError && <div className="text-red-600 text-sm">{payError}</div>}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setPayModal({ open: false, paymentId: null })} disabled={payLoading}>Отмена</Button>
+                <Button onClick={handlePay} disabled={payLoading}>{payLoading ? "Оплата..." : "Оплатить"}</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   )

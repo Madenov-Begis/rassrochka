@@ -8,4 +8,34 @@ export interface Installment {
   totalAmount: number
   monthlyPayment: number
   productName: string
+  productPrice?: number
+  downPayment?: number
+  interestRate?: number
+  months?: number
+  customer: {
+    firstName: string
+    lastName: string
+    phone?: string
+    address?: string
+  }
+}
+
+export interface InstallmentBody {
+  productName: string
+  productPrice: number
+  downPayment: number
+  interestRate: number
+  months: number
+  customerId: number
+}
+
+export interface Payment {
+  id: number
+  amount: number
+  dueDate: string
+  paidDate: string | null
+  status: string
+  installmentId: number
+  createdAt: string
+  updatedAt: string
 }

@@ -51,6 +51,11 @@ export interface GlobalSearchPassport {
   }
 }
 
+export interface CustomerList {
+  id: number
+  fullname: string
+}
+
 
  
 

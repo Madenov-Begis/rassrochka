@@ -13,17 +13,19 @@ export class InstallmentsService {
     const { productPrice, downPayment, interestRate, months, customerId } = createInstallmentDto
 
     // Получаем клиента
-    const customer = await this.prisma.customer.findUnique({ where: { id: customerId } })
+    const customer = await this.prisma.customer.findUnique({ where: { id: Number(customerId) } })
     if (!customer) throw new NotFoundException('Клиент не найден')
 
-    // Расчет рассрочки
-    const base = productPrice - downPayment
-    const totalAmount = base * (1 + interestRate / 100)
-    const monthlyPayment = totalAmount / months
+    // Расчет рассрочки (простые проценты)
+    const base = productPrice - downPayment;
+    const totalInterest = base * interestRate * months / 100;
+    const totalAmount = base + totalInterest;
+    const monthlyPayment = totalAmount / months;
 
     const installment = await this.prisma.installment.create({
       data: {
         ...createInstallmentDto,
+        customerId: Number(customerId),
         totalAmount: new Decimal(totalAmount),
         monthlyPayment: new Decimal(monthlyPayment),
         storeId,
@@ -91,7 +93,7 @@ export class InstallmentsService {
     ])
 
     return {
-      data: installments,
+      items: installments,
       total,
       page,
       limit,
@@ -120,16 +122,27 @@ export class InstallmentsService {
   async payOffEarly(id: number, storeId: number) {
     const installment = await this.findOne(id, storeId)
 
-    const paidPayments = await this.prisma.payment.findMany({
+    // Проверка наличия просроченных платежей
+    const overduePayments = await this.prisma.payment.findMany({
       where: {
         installmentId: id,
-        status: "paid",
+        status: "overdue",
       },
     })
+    if (overduePayments.length > 0) {
+      throw new Error('Сначала оплатите все просроченные платежи')
+    }
 
-    const paidAmount = paidPayments.reduce((sum, payment) => sum + Number(payment.amount), 0)
+    // Основной долг
     const base = Number(installment.productPrice) - Number(installment.downPayment)
-    const remainingBase = Math.max(0, base - paidAmount)
+    // Сумма всех оплат по рассрочке (по всей истории оплат)
+    const allPaymentHistory = await this.prisma.paymentHistory.findMany({
+      where: {
+        payment: { installmentId: id },
+      },
+    })
+    const totalPaid = allPaymentHistory.reduce((sum, h) => sum + Number(h.amount), 0)
+    const remainingBase = Math.max(0, base - totalPaid)
 
     // Отменяем все неоплаченные платежи
     await this.prisma.payment.updateMany({
@@ -162,6 +175,7 @@ export class InstallmentsService {
     return this.prisma.payment.findMany({
       where: { installmentId: id },
       orderBy: { dueDate: "asc" },
+      include: { paymentHistory: true },
     })
   }
 
