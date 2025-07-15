@@ -2,7 +2,6 @@ import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 import { adminApi } from "@/services/api"
-import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,6 +23,9 @@ import { Pagination } from "@/components/pagination"
 import { useDebounce } from "@/hooks/use-debounce"
 import { UserForm } from "@/components/forms/user-form"
 import type { UserFormValues } from "@/components/forms/user-form"
+import type { AdminStore } from "@/types/admin/store"
+import type { PaginatedApiResponse } from "@/types/api-response"
+import type { User } from "@/types/admin/user"
 
 export default function AdminUsers() {
   const navigate = useNavigate()
@@ -33,16 +35,16 @@ export default function AdminUsers() {
   const [page, setPage] = useState(1)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const limit = 10
-  const [stores, setStores] = useState<{ id: string; name: string }[]>([])
+  const [stores, setStores] = useState<AdminStore[]>([])
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<PaginatedApiResponse<User[]>>({
     queryKey: ["admin-users", { page, limit, search: debouncedSearch }],
     queryFn: () => adminApi.getUsers({ page, limit, search: debouncedSearch }),
   })
 
   useEffect(() => {
     adminApi.getStores({ limit: 1000 }).then((res) => {
-      setStores(res.data || [])
+      setStores(res.data?.items || [])
     })
   }, [])
 
@@ -94,13 +96,12 @@ export default function AdminUsers() {
     setIsCreateDialogOpen(false)
   }
 
-  const handleStatusToggle = (user: { id: string; status: string }) => {
+    const handleStatusToggle = (user: User) => {
     const newStatus = user.status === "active" ? "blocked" : "active"
-    updateStatusMutation.mutate({ id: user.id, status: newStatus })
+    updateStatusMutation.mutate({ id: user.id.toString(), status: newStatus })
   }
 
   return (
-    <DashboardLayout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
@@ -170,12 +171,12 @@ export default function AdminUsers() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((user: { id: string; login: string; role: string; store: { name: string }; status: string; createdAt: string }) => (
+                    {users.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.id}</TableCell>
                         <TableCell>{user.login}</TableCell>
                         <TableCell>{getRoleBadge(user.role)}</TableCell>
-                        <TableCell>{user.store?.name || "-"}</TableCell>
+                        <TableCell>{stores.find((store) => store.id === user.storeId)?.name || "-"}</TableCell>
                         <TableCell>
                           <Badge
                             className={
@@ -230,6 +231,5 @@ export default function AdminUsers() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
   )
 }

@@ -6,7 +6,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { adminApi } from "@/services/api"
 import { DashboardSkeleton } from "@/components/loading/dashboard-skeleton"
@@ -15,33 +14,19 @@ import { StoreForm } from '../../../components/forms/store-form';
 import { Dialog, DialogContent, DialogTrigger } from '../../../components/ui/dialog';
 import { useState } from "react"
 import { toast } from "react-toastify"
+import type { ApiError, ApiResponse } from "@/types/api-response"
+import type { AdminStoreDetail  } from "@/types/admin/store"
+import type { Installment } from "@/types/store/installments"
+import type { User } from "@/types/admin/user"
 
 export default function StoreDetailPage() {
   const { id } = useParams()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [editOpen, setEditOpen] = useState(false);
-  const { data: store, isLoading } = useQuery({
+  const { data: store, isLoading } = useQuery<ApiResponse<AdminStoreDetail>, ApiError>({
     queryKey: ["admin-store", id],
     queryFn: () => adminApi.getStore(id as string),
-    enabled: !!id,
-  })
-
-  const { data: storeStats } = useQuery({
-    queryKey: ["admin-store-stats", id],
-    queryFn: () => adminApi.getStoreStats(id as string),
-    enabled: !!id,
-  })
-
-  const { data: storeUsers } = useQuery({
-    queryKey: ["admin-store-users", id],
-    queryFn: () => adminApi.getStoreUsers(id as string),
-    enabled: !!id,
-  })
-
-  const { data: storeInstallments } = useQuery({
-    queryKey: ["admin-store-installments", id],
-    queryFn: () => adminApi.getStoreInstallments(id as string),
     enabled: !!id,
   })
 
@@ -55,22 +40,18 @@ export default function StoreDetailPage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
         <DashboardSkeleton />
-      </DashboardLayout>
     )
   }
 
   if (!store) {
     return (
-      <DashboardLayout>
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-gray-900">Магазин не найден</h2>
           <Button onClick={() => navigate(-1)} className="mt-4">
             Вернуться назад
           </Button>
         </div>
-      </DashboardLayout>
     )
   }
 
@@ -109,7 +90,6 @@ export default function StoreDetailPage() {
   }
 
   return (
-    <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -118,10 +98,10 @@ export default function StoreDetailPage() {
             Назад
           </Button>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold">{store.data.name}</h1>
-            <p className="text-gray-600">Управление магазином #{store.data.id.slice(-8)}</p>
+            <h1 className="text-3xl font-bold">{store.data?.name}</h1>
+            <p className="text-gray-600">Управление магазином #{String(store.data?.id).slice(-8)}</p>
           </div>
-          {getStatusBadge(store.data.status)}
+          {getStatusBadge(store.data?.status || '')}
         </div>
 
         {/* Stats Cards */}
@@ -132,7 +112,7 @@ export default function StoreDetailPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{storeStats?.totalCustomers || 0}</div>
+              <div className="text-2xl font-bold">{store.data?.users?.length || 0}</div>
               <p className="text-xs text-muted-foreground">Всего клиентов</p>
             </CardContent>
           </Card>
@@ -143,8 +123,8 @@ export default function StoreDetailPage() {
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{storeStats?.totalInstallments || 0}</div>
-              <p className="text-xs text-muted-foreground">Активных: {storeStats?.activeInstallments || 0}</p>
+              <div className="text-2xl font-bold">{store.data?.installments?.length || 0}</div>
+              <p className="text-xs text-muted-foreground">Активных: {store.data?.installments?.filter((i: Installment) => i.status === 'active').length || 0}</p>
             </CardContent>
           </Card>
 
@@ -154,7 +134,7 @@ export default function StoreDetailPage() {
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{storeStats?.overdueInstallments || 0}</div>
+              <div className="text-2xl font-bold text-red-600">{store.data?.installments?.filter((i: Installment) => i.status === 'overdue').length || 0}</div>
               <p className="text-xs text-muted-foreground text-red-600">Требует внимания</p>
             </CardContent>
           </Card>
@@ -165,13 +145,13 @@ export default function StoreDetailPage() {
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(storeStats?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
+              <div className="text-2xl font-bold">{(store.data?.installments?.reduce((sum: number, i: Installment) => sum + Number(i.totalAmount), 0) || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
               <p className="text-xs text-muted-foreground">Общая сумма рассрочек</p>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="info" className="space-y-6">
+        <Tabs defaultValue="info" className="space-y-6">  
           <TabsList>
             <TabsTrigger value="info">Информация</TabsTrigger>
             <TabsTrigger value="users">Пользователи</TabsTrigger>
@@ -194,8 +174,8 @@ export default function StoreDetailPage() {
                     </DialogTrigger>
                     <DialogContent>
                       <StoreForm
-                        storeId={store.data.id}
-                        initial={{ name: store.data.name, address: store.data.address, phone: store.data.phone, status: store.data.status }}
+                        storeId={store.data?.id?.toString()}
+                        initial={{ name: store.data?.name, address: store.data?.address, phone: store.data?.phone, status: store.data?.status as "active" | "payment_overdue" | "blocked" }}
                         onSuccess={() => { setEditOpen(false); window.location.reload(); }}
                       />
                     </DialogContent>
@@ -205,7 +185,7 @@ export default function StoreDetailPage() {
                   <div className="flex items-center gap-3">
                     <Store className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="font-medium">{store.data.name}</p>
+                      <p className="font-medium">{store.data?.name}</p>
                       <p className="text-sm text-gray-600">Название магазина</p>
                     </div>
                   </div>
@@ -213,7 +193,7 @@ export default function StoreDetailPage() {
                   <div className="flex items-center gap-3">
                     <MapPin className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="font-medium">{store.data.address}</p>
+                      <p className="font-medium">{store.data?.address}</p>
                       <p className="text-sm text-gray-600">Адрес</p>
                     </div>
                   </div>
@@ -221,19 +201,19 @@ export default function StoreDetailPage() {
                   <div className="flex items-center gap-3">
                     <Phone className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="font-medium">{store.data.phone}</p>
+                      <p className="font-medium">{store.data?.phone}</p>
                       <p className="text-sm text-gray-600">Телефон</p>
                     </div>
                   </div>
 
                   <div className="border-t pt-4">
                     <p className="text-sm text-gray-600 mb-2">Дата создания</p>
-                    <p className="font-medium">{new Date(store.data.createdAt).toLocaleDateString()}</p>
+                    <p className="font-medium">{new Date(store.data?.createdAt || '').toLocaleDateString()}</p>
                   </div>
 
                   <div className="border-t pt-4">
                     <p className="text-sm text-gray-600 mb-2">Последнее обновление</p>
-                    <p className="font-medium">{new Date(store.data.updatedAt).toLocaleDateString()}</p>
+                    <p className="font-medium">{new Date(store.data?.updatedAt || '').toLocaleDateString()}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -247,7 +227,7 @@ export default function StoreDetailPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Текущий статус</label>
                     <Select
-                      value={store.data?.status}
+                      value={store.data?.status || ''}
                       onValueChange={(value) => updateStatusMutation.mutate(value)}
                       disabled={updateStatusMutation.isPending}
                     >
@@ -305,12 +285,11 @@ export default function StoreDetailPage() {
                       <TableHead>Логин</TableHead>
                       <TableHead>Роль</TableHead>
                       <TableHead>Дата создания</TableHead>
-                      <TableHead>Последний вход</TableHead>
                       <TableHead>Действия</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {storeUsers?.data?.items.map((user: any) => (
+                    {store.data?.users?.map((user: User) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.login}</TableCell>
                         <TableCell>
@@ -318,8 +297,7 @@ export default function StoreDetailPage() {
                             {user.role === "store_manager" ? "Менеджер" : "Администратор"}
                           </Badge>
                         </TableCell>
-                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                        <TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "—"}</TableCell>
+                        <TableCell>{new Date(user.createdAt || '').toLocaleDateString()}</TableCell>
                         <TableCell>
                           <Button variant="ghost" size="sm">
                             Редактировать
@@ -351,7 +329,7 @@ export default function StoreDetailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {storeInstallments?.data?.items.map((installment: any) => (
+                    {store.data?.installments?.map((installment: Installment) => (
                       <TableRow key={installment.id}>
                         <TableCell className="font-medium">{installment.productName}</TableCell>
                         <TableCell>
@@ -369,9 +347,9 @@ export default function StoreDetailPage() {
                     ))}
                   </TableBody>
                 </Table>
-                {storeInstallments?.data?.total > 10 && (
+                {store?.data?.installments?.length && store?.data?.installments?.length > 10 && (
                   <div className="mt-4 text-center">
-                    <Button variant="outline">Показать все ({storeInstallments.data.total})</Button>
+                    <Button variant="outline">Показать все ({store.data?.installments?.length})</Button>
                   </div>
                 )}
               </CardContent>
@@ -386,27 +364,7 @@ export default function StoreDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Январь 2024</span>
-                      <div className="text-right">
-                        <div className="font-bold">{(storeStats?.data?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
-                        <div className="text-sm text-gray-600">12 рассрочек</div>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Февраль 2024</span>
-                      <div className="text-right">
-                        <div className="font-bold">{(storeStats?.data?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
-                        <div className="text-sm text-gray-600">9 рассрочек</div>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Март 2024</span>
-                      <div className="text-right">
-                        <div className="font-bold">{(storeStats?.data?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
-                        <div className="text-sm text-gray-600">15 рассрочек</div>
-                      </div>
-                    </div>
+                    {/* Здесь можно реализовать аналитику по месяцам, используя store.installments */}
                   </div>
                 </CardContent>
               </Card>
@@ -417,27 +375,7 @@ export default function StoreDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>iPhone 15 Pro</span>
-                      <div className="text-right">
-                        <div className="font-bold">8 шт</div>
-                        <div className="text-sm text-gray-600">{(storeStats?.data?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Samsung Galaxy S24</span>
-                      <div className="text-right">
-                        <div className="font-bold">6 шт</div>
-                        <div className="text-sm text-gray-600">{(storeStats?.data?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>MacBook Air M2</span>
-                      <div className="text-right">
-                        <div className="font-bold">4 шт</div>
-                        <div className="text-sm text-gray-600">{(storeStats?.data?.totalAmount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
-                      </div>
-                    </div>
+                    {/* Здесь можно реализовать топ товаров по количеству и сумме, используя store.installments */}
                   </div>
                 </CardContent>
               </Card>
@@ -445,6 +383,5 @@ export default function StoreDetailPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   )
 }

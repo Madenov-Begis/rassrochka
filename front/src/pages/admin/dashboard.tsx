@@ -2,14 +2,12 @@ import { Store as StoreIcon, Users, CreditCard, AlertTriangle, TrendingUp, Dolla
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Progress } from "@/components/ui/progress"
-import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { useQuery } from "@tanstack/react-query"
 import { adminApi } from "@/services/api"
 import { useNavigate } from "react-router-dom"
 import { DashboardSkeleton } from "@/components/loading/dashboard-skeleton"
-import type { Store , TopStore } from "@/types/admin/store"
+import type { TopStore } from "@/types/admin/store"
+import type { SystemAlert } from "@/types/admin/system-alert"
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -19,10 +17,7 @@ export default function AdminDashboard() {
     queryFn: () => adminApi.getStats(),
   })
 
-  const { data: recentStores } = useQuery({
-    queryKey: ["recent-stores"],
-    queryFn: () => adminApi.getStores({ limit: 5 }),
-  })
+
 
   const { data: topStores } = useQuery({
     queryKey: ["top-stores"],
@@ -36,33 +31,11 @@ export default function AdminDashboard() {
 
   if (statsLoading) {
     return (
-      <DashboardLayout>
         <DashboardSkeleton />
-      </DashboardLayout>
-    )
+      )
   }
-
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      active: "bg-green-100 text-green-800",
-      payment_overdue: "bg-yellow-100 text-yellow-800",
-      blocked: "bg-red-100 text-red-800",
-    }
-
-    const labels = {
-      active: "Активен",
-      payment_overdue: "Просрочка",
-      blocked: "Заблокирован",
-    }
-
-    return <Badge className={variants[status as keyof typeof variants]}>{labels[status as keyof typeof labels]}</Badge>
-  }
-
-  const networkTarget = 10000000 // 10M UZS цель сети на месяц
-  const currentProgress = (stats?.data?.totalRevenue / networkTarget) * 100 || 0
 
   return (
-    <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -121,28 +94,6 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Network Progress */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Прогресс сети к цели месяца</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>
-                  {(stats?.data?.totalRevenue || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS из {(networkTarget).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS
-                </span>
-                <span>{currentProgress.toFixed(1)}%</span>
-              </div>
-              <Progress value={currentProgress} className="h-2" />
-              <p className="text-xs text-muted-foreground">
-                Осталось {(networkTarget - (stats?.data?.totalRevenue || 0)).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS до цели
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* System Alerts */}
         {systemAlerts && systemAlerts.length > 0 && (
           <Card className="border-yellow-200 bg-yellow-50">
             <CardHeader>
@@ -153,7 +104,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {systemAlerts.map((alert: any, index: number) => (
+                {systemAlerts.map((alert: SystemAlert, index: number) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-white rounded">
                     <div>
                       <p className="font-medium">{alert.title}</p>
@@ -200,44 +151,7 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Recent Stores */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Недавно добавленные магазины</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Название</TableHead>
-                    <TableHead>Статус</TableHead>
-                    <TableHead>Дата</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentStores?.data?.items?.map((store: Store) => (
-                    <TableRow
-                      key={store.id}
-                      className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => navigate(`/admin/stores/${store.id}`)}
-                    >
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{store.name}</p>
-                          <p className="text-sm text-gray-600">{store.address}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(store.status)}</TableCell>
-                      <TableCell>{new Date(store.createdAt).toLocaleDateString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
         </div>
       </div>
-    </DashboardLayout>
   )
 }

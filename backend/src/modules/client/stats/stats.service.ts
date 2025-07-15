@@ -19,6 +19,8 @@ export class StatsService {
       newThisMonth,
       monthlyRevenue,
       lastMonthRevenue,
+      overduePayments,
+      totalActiveAmountAgg,
     ] = await Promise.all([
       this.prisma.installment.count({
         where: { storeId },
@@ -55,6 +57,16 @@ export class StatsService {
         },
         _sum: { totalAmount: true },
       }),
+      this.prisma.payment.count({
+        where: {
+          installment: { storeId },
+          status: "overdue",
+        },
+      }),
+      this.prisma.installment.aggregate({
+        where: { storeId, status: "active" },
+        _sum: { totalAmount: true },
+      }),
     ])
 
     const currentRevenue = Number(monthlyRevenue._sum.totalAmount) || 0
@@ -63,6 +75,7 @@ export class StatsService {
       Number(previousRevenue) > 0
         ? Math.round(((currentRevenue - previousRevenue) / previousRevenue) * 100)
         : 0
+    const totalActiveAmount = Number(totalActiveAmountAgg._sum.totalAmount) || 0
 
     return {
       totalInstallments,
@@ -72,6 +85,8 @@ export class StatsService {
       newThisMonth,
       monthlyRevenue: currentRevenue,
       revenueGrowth,
+      overduePayments,
+      totalActiveAmount,
     }
   }
 }

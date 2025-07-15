@@ -15,6 +15,8 @@ import type { PaginatedApiResponse, ApiError } from '@/types/api-response'
 import type { Installment } from "@/types/store/installments"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useNavigate } from "react-router-dom"
+import { useStatsStore } from '@/store/stats-store'
+import { useEffect } from 'react'
 
 export default function InstallmentsPage() {
   const [search, setSearch] = useState("")
@@ -22,10 +24,15 @@ export default function InstallmentsPage() {
   const [status, setStatus] = useState("all") // Updated default value to "all"
   const [page, setPage] = useState(1)
   const navigate = useNavigate()
+
   const { data: installments, isLoading } = useQuery<PaginatedApiResponse<Installment[]>, ApiError>({
     queryKey: ["installments", { search: debouncedValue, status, page }],
     queryFn: () => installmentsApi.getAll({ search:debouncedValue, status, page }),
   })
+
+  const { stats, isLoading: statsLoading, error: statsError, fetchStats } = useStatsStore()
+
+  useEffect(() => { fetchStats() }, [])
 
   const getStatusBadge = (status: string) => {
     const config = {
@@ -86,8 +93,8 @@ export default function InstallmentsPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">245</div>
-              <p className="text-xs text-muted-foreground">+12% с прошлого месяца</p>
+              <div className="text-2xl font-bold">{statsLoading ? 'Загрузка...' : stats?.totalInstallments ?? '-'}</div>
+              <p className="text-xs text-muted-foreground">{statsLoading ? '' : stats ? `+${stats.revenueGrowth}% с прошлого месяца` : ''}</p>
             </CardContent>
           </Card>
 
@@ -97,8 +104,8 @@ export default function InstallmentsPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">189</div>
-              <p className="text-xs text-muted-foreground">77% от общего числа</p>
+              <div className="text-2xl font-bold">{statsLoading ? 'Загрузка...' : stats?.activeInstallments ?? '-'}</div>
+              <p className="text-xs text-muted-foreground">{stats && stats.totalInstallments ? `${Math.round((stats.activeInstallments / stats.totalInstallments) * 100)}% от общего числа` : ''}</p>
             </CardContent>
           </Card>
 
@@ -108,7 +115,7 @@ export default function InstallmentsPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">23</div>
+              <div className="text-2xl font-bold">{statsLoading ? 'Загрузка...' : stats?.overdueInstallments ?? '-'}</div>
               <p className="text-xs text-muted-foreground text-red-600">Требует внимания</p>
             </CardContent>
           </Card>
@@ -119,11 +126,13 @@ export default function InstallmentsPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2.4М UZS</div>
-              <p className="text-xs text-muted-foreground">+8% с прошлого месяца</p>
+              <div className="text-2xl font-bold">{statsLoading ? 'Загрузка...' : stats ? `${Number(stats.totalActiveAmount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS` : '-'}</div>
+              <p className="text-xs text-muted-foreground">{statsLoading ? '' : stats ? `+${stats.revenueGrowth}% с прошлого месяца` : ''}</p>
             </CardContent>
           </Card>
         </div>
+        
+        {statsError && <div className="text-red-600">{statsError}</div>}
 
         {/* Filters */}
         <Card>

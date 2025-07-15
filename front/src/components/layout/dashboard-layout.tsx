@@ -1,6 +1,3 @@
- 
-
-import type React from "react"
 import { useState } from "react"
 import { Bell, Menu, Search, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -16,12 +13,10 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Sidebar } from "./sidebar"
 import { useAuthStore } from "@/store/auth-store"
+import { Outlet } from "react-router-dom"
 
-interface DashboardLayoutProps {
-  children: React.ReactNode
-}
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user, logout } = useAuthStore()
 
@@ -91,7 +86,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Page Content */}
           <main className="flex-1 overflow-auto p-6">
-            {children}
+            <Outlet />
         </main>
       </div>
     </div>

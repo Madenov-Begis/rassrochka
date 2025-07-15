@@ -47,15 +47,17 @@ export class PaymentsService {
     let payAmount = amount
     for (const p of allPayments) {
       if (p.status === "paid" || p.status === "cancelled") continue
-      if (payAmount <= 0) break
       // Сумма всех оплат по этому платежу
       const paidSum = p.paymentHistory.reduce((sum, h) => sum + Number(h.amount), 0)
       const leftToPay = Number(p.amount) - paidSum
+      if (payAmount <= 0 || leftToPay <= 0) break
       if (payAmount >= leftToPay) {
         // Полная оплата платежа
-        await this.prisma.paymentHistory.create({
-          data: { paymentId: p.id, amount: leftToPay },
-        })
+        if (leftToPay > 0) {
+          await this.prisma.paymentHistory.create({
+            data: { paymentId: p.id, amount: leftToPay },
+          })
+        }
         await this.prisma.payment.update({
           where: { id: p.id },
           data: { status: "paid", paidDate: new Date() },
@@ -63,9 +65,11 @@ export class PaymentsService {
         payAmount -= leftToPay
       } else {
         // Частичная оплата платежа
-        await this.prisma.paymentHistory.create({
-          data: { paymentId: p.id, amount: payAmount },
-        })
+        if (payAmount > 0) {
+          await this.prisma.paymentHistory.create({
+            data: { paymentId: p.id, amount: payAmount },
+          })
+        }
         // Не меняем статус, если не закрыт
         payAmount = 0
         break

@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { useQuery } from "@tanstack/react-query"
 import { adminApi } from "@/services/api"
 import { useNavigate } from "react-router-dom"
@@ -13,11 +12,10 @@ import { TableSkeleton } from "@/components/loading/table-skeleton"
 import { StoreModal } from '../../../components/forms/store-modal';
 import { toast } from 'react-toastify';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { AxiosError } from 'axios';
 import { useDebounce } from "@/hooks/use-debounce";
 import { Pagination as ServerPagination } from "@/components/pagination";
 import type { ApiError, PaginatedApiResponse } from "@/types/api-response"
-import type { Store } from "@/types/admin/store"
+import type { AdminStore } from "@/types/admin/store"
 
 export default function AdminStoresPage() {
   const navigate = useNavigate()
@@ -34,23 +32,22 @@ export default function AdminStoresPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-stores'] });
     },
     onError: (e) => {
-      const err = e as AxiosError<{ statusCode: number; message?: string; errors?: Record<string, string[]> }>;
-      const data = err?.response?.data;
-      if (data?.errors) {
-        const errors = data.errors as Record<string, string[]>;
+      const err = e as ApiError;
+      if (err?.errors) {
+        const errors = err.errors as Record<string, string[]>;
         const details = Object.entries(errors)
           .map(([field, msgs]) => `${field}: ${msgs.join(', ')}`)
           .join('\n');
         toast.error('Ошибка удаления:\n' + details);
       } else {
-        toast.error('Ошибка удаления: ' + (data?.message || err.message));
+        toast.error('Ошибка удаления: ' + (err?.message || err.message));
       }
     },
   });
 
-  const { data: storesData, isLoading } = useQuery<PaginatedApiResponse<Store[]>, ApiError>({
+  const { data: storesData, isLoading } = useQuery<PaginatedApiResponse<AdminStore[]>, ApiError>({
     queryKey: ["admin-stores", { search: debouncedSearch, page }],
-    queryFn: () => adminApi.getStores({ search: debouncedSearch, page, limit: 10 }).then((r) => r.data),
+    queryFn: () => adminApi.getStores({ search: debouncedSearch, page, limit: 10 }),
   })
 
 
@@ -82,7 +79,6 @@ export default function AdminStoresPage() {
   }
 
   return (
-    <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -219,7 +215,7 @@ export default function AdminStoresPage() {
                             variant="destructive"
                             size="sm"
                             onClick={() => {
-                              if (window.confirm('Удалить магазин?')) deleteMutation.mutate(store.id);
+                              if (window.confirm('Удалить магазин?')) deleteMutation.mutate(store.id.toString());
                             }}
                             disabled={deleteMutation.status === 'pending'}
                           >
@@ -243,6 +239,5 @@ export default function AdminStoresPage() {
         </Card>
 
       </div>
-    </DashboardLayout>
   )
 }

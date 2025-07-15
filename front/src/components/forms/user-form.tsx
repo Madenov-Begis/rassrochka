@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { z } from "zod";
-import type { PaginatedApiResponse } from "@/types/api-response";
 import type { Store } from "@/types/admin/store";
 
 const userSchema = z.object({
@@ -27,7 +26,7 @@ interface UserFormProps {
   onSubmit: (values: UserFormValues) => void | Promise<void>;
   mode: "create" | "edit";
   loading?: boolean;
-  stores: PaginatedApiResponse<Store[]>;
+  stores: Store[];
 }
 
 export const UserForm: React.FC<UserFormProps> = ({ initialValues, onSubmit, mode, loading, stores }) => {
@@ -136,7 +135,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialValues, onSubmit, mod
               <SelectValue placeholder="Выберите магазин" />
             </SelectTrigger>
             <SelectContent>
-              {stores?.data?.items.map((store) => (
+              {stores?.map((store) => (
                 <SelectItem key={store.id} value={store.id.toString()}>{store.name}</SelectItem>
               ))}
             </SelectContent>

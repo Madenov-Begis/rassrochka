@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { adminApi } from "@/services/api"
 import { DashboardSkeleton } from "@/components/loading/dashboard-skeleton"
@@ -14,13 +13,14 @@ import { useParams, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
 import { UserForm } from "@/components/forms/user-form"
 import type { UserFormValues } from "@/components/forms/user-form"
+import type { AdminStore } from "@/types/admin/store"
 
 export default function UserDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
-  const [stores, setStores] = useState<{ id: string; name: string }[]>([])
+  const [stores, setStores] = useState<AdminStore[]>([])
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   const { data: user, isLoading } = useQuery({
@@ -37,7 +37,7 @@ export default function UserDetailPage() {
 
   const updateStatusMutation = useMutation({
     mutationFn: (isActive: boolean) => adminApi.updateUserStatus(id as string, isActive),
-    onSuccess: (data, isActive) => {
+    onSuccess: (_, isActive) => {
       queryClient.invalidateQueries({ queryKey: ["admin-user", id] })
       setIsStatusDialogOpen(false)
       toast.success(isActive ? "Пользователь активирован" : "Пользователь заблокирован")
@@ -46,7 +46,7 @@ export default function UserDetailPage() {
 
   useEffect(() => {
     adminApi.getStores({ limit: 1000 }).then((res) => {
-      setStores(res.data || [])
+      setStores(res.data?.items || [])
     })
   }, [])
 
@@ -62,22 +62,18 @@ export default function UserDetailPage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
         <DashboardSkeleton />
-      </DashboardLayout>
     )
   }
 
   if (!user) {
     return (
-      <DashboardLayout>
         <div className="text-center py-12">
           <h2 className="text-2xl font-bold text-gray-900">Пользователь не найден</h2>
           <Button onClick={() => navigate(-1)} className="mt-4">
             Вернуться назад
           </Button>
         </div>
-      </DashboardLayout>
     )
   }
 
@@ -96,7 +92,6 @@ export default function UserDetailPage() {
   }
 
   return (
-    <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -366,6 +361,5 @@ export default function UserDetailPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   )
 }

@@ -12,6 +12,21 @@ import { Roles } from "../../auth/decorators/roles.decorator"
 export class StoresController {
   constructor(private readonly storesService: StoresService) {}
 
+  @Get(":id")
+  async getFull(@Param('id') id: number, @Query() query: { page?: number; limit?: number }) {
+    const store = await this.storesService.findOne(id)
+    const users = await this.storesService.getUsers(id)
+    const installments = await this.storesService.getInstallments(id, {
+      page: Number(query.page) || 1,
+      limit: Number(query.limit) || 1000, // отдаём все, если не указано
+    })
+    return {
+      ...store,
+      users,
+      installments: installments.items,
+    }
+  }
+
   @Get()
   async findAll(@Query() query: { search?: string; page?: number; limit?: number }) {
     return this.storesService.findAll({
@@ -19,29 +34,6 @@ export class StoresController {
       page: Number(query.page) || 1,
       limit: Number(query.limit) || 10,
     });
-  }
-
-  @Get(':id')
-  async findOne(@Param('id') id: number) {
-    return this.storesService.findOne(id);
-  }
-
-  @Get(':id/stats')
-  async getStats(@Param('id') id: number) {
-    return this.storesService.getStats(id);
-  }
-
-  @Get(':id/users')
-  async getUsers(@Param('id') id: number) {
-    return this.storesService.getUsers(id);
-  }
-
-  @Get(":id/installments")
-  async getInstallments(@Param('id') id: number, @Query() query: { page?: number; limit?: number }) {
-    return this.storesService.getInstallments(id, {
-      page: Number(query.page) || 1,
-      limit: Number(query.limit) || 10,
-    })
   }
 
   @Post()

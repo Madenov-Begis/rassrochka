@@ -5,6 +5,7 @@ import type { Customer, CustomerBody, CustomerList, GlobalSearchPassport } from 
 import type { Installment } from "@/types/store/installments"
 import type { Payment } from "@/types/store/payments"
 import type { Store } from "@/types/admin/store"
+import type { User } from "@/types/admin/user"
 
 const API_BASE = "http://localhost:3000"
 
@@ -27,7 +28,7 @@ api.interceptors.request.use((config) => {
 
 // Response interceptor: обработка 401
 api.interceptors.response.use(
-  (response) => response,
+    (response) => response  ,
   (error) => {
     if (error.response && error.response.status === 401) {
       useAuthStore.getState().logout()
@@ -48,7 +49,7 @@ export const authApi = {
 export const adminApi = {
   // Stores
   getStores: (params?: Record<string, string | number>) =>
-    api.get<PaginatedApiResponse<Store[]>>("api/admin/stores", { params }).then((r) => r),
+    api.get<PaginatedApiResponse<Store[]>>("api/admin/stores", { params }).then((r) => r.data),
   getStore: (id: string) => api.get<ApiResponse<Store>>(`api/admin/stores/${id}`).then((r) => r.data),
   createStore: (data: Record<string, unknown>) =>
     api.post("api/admin/stores", data).then((r) => r.data),
@@ -63,7 +64,7 @@ export const adminApi = {
 
   // Users
   getUsers: (params?: Record<string, string | number>) =>
-    api.get("api/admin/users", { params }).then((r) => r.data),
+    api.get<PaginatedApiResponse<User[]>>("api/admin/users", { params }).then((r) => r.data),
   getUser: (id: string) => api.get(`api/admin/users/${id}`).then((r) => r.data),
   createUser: (data: Record<string, unknown>) =>
     api.post("api/admin/users", data).then((r) => r.data),
