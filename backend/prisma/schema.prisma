@@ -107,8 +107,7 @@ enum Role {
 
 enum StoreStatus {
   active
-  payment_overdue
-  blocked
+  inactive
 }
 
 enum InstallmentStatus {

@@ -1,7 +1,6 @@
-import { useState } from "react"
-import { Bell, Menu, Search, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useState } from 'react';
+import { Bell, Menu, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,49 +8,41 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Sidebar } from "./sidebar"
-import { useAuthStore } from "@/store/auth-store"
-import { Outlet } from "react-router-dom"
-
+} from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sidebar } from './sidebar';
+import { useAuthStore } from '@/store/auth-store';
+import { Outlet } from 'react-router-dom';
 
 export function DashboardLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user, logout } = useAuthStore()
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, logout } = useAuthStore();
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Desktop Sidebar */}
       <div className="hidden lg:flex lg:w-64 lg:flex-col">
         <Sidebar />
       </div>
 
-      {/* Mobile Sidebar */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-64">
-          <Sidebar />
-        </SheetContent>
-      </Sheet>
-
-      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-4">
-              <Sheet>
+              <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="lg:hidden"
+                    onClick={() => setSidebarOpen(true)}
+                  >
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-64">
+                  <Sidebar onItemClick={() => setSidebarOpen(false)} />
+                </SheetContent>
               </Sheet>
-
-              <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input placeholder="Поиск..." className="pl-10 w-full" />
-              </div>
             </div>
 
             <div className="flex items-center gap-4">
@@ -70,7 +61,7 @@ export function DashboardLayout() {
                   <DropdownMenuLabel>
                     {user?.login}
                     <div className="text-xs text-muted-foreground">
-                      {user?.role === "admin" ? "Администратор" : "Менеджер"}
+                      {user?.role === 'admin' ? 'Администратор' : 'Менеджер'}
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -84,11 +75,10 @@ export function DashboardLayout() {
           </div>
         </header>
 
-        {/* Page Content */}
-          <main className="flex-1 overflow-auto p-6">
-            <Outlet />
+        <main className="flex-1 overflow-auto p-6">
+          <Outlet />
         </main>
       </div>
     </div>
-  )
+  );
 }

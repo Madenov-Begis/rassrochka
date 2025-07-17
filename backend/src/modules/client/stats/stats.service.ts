@@ -21,6 +21,9 @@ export class StatsService {
       lastMonthRevenue,
       overduePayments,
       totalActiveAmountAgg,
+      totalCustomers,
+      blacklistedCustomers,
+      overdueCustomers
     ] = await Promise.all([
       this.prisma.installment.count({
         where: { storeId },
@@ -67,7 +70,25 @@ export class StatsService {
         where: { storeId, status: "active" },
         _sum: { totalAmount: true },
       }),
+      // --- Клиенты ---
+      this.prisma.customer.count({ where: { storeId } }),
+      this.prisma.customer.count({ where: { storeId, isBlacklisted: true } }),
+      this.prisma.customer.count({
+        where: {
+          storeId,
+          installments: { some: { status: "overdue" } },
+        },
+      }),
     ])
+
+    // Активные клиенты: не в чёрном списке и без просрочек
+    const activeCustomers = await this.prisma.customer.count({
+      where: {
+        storeId,
+        isBlacklisted: false,
+        installments: { none: { status: "overdue" } },
+      },
+    })
 
     const currentRevenue = Number(monthlyRevenue._sum.totalAmount) || 0
     const previousRevenue = Number(lastMonthRevenue._sum.totalAmount) || 0
@@ -87,6 +108,11 @@ export class StatsService {
       revenueGrowth,
       overduePayments,
       totalActiveAmount,
+      // --- Клиенты ---
+      totalCustomers,
+      blacklistedCustomers,
+      overdueCustomers,
+      activeCustomers,
     }
   }
 }

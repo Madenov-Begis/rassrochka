@@ -39,23 +39,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-6 px-2 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-6 sm:space-y-8">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center">
-            <CreditCard className="h-8 w-8 text-white" />
+          <div className="mx-auto h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <CreditCard className="h-7 w-7 text-white" />
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">InstallmentPro</h2>
-          <p className="mt-2 text-sm text-gray-600">Система управления рассрочками</p>
+          <h2 className="mt-4 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">InstallmentPro</h2>
+          <p className="mt-1 text-xs sm:text-sm text-gray-600">Система управления рассрочками</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Вход в систему</CardTitle>
-            <CardDescription>Введите свои учетные данные для доступа к панели управления</CardDescription>
+            <CardTitle className="text-xl sm:text-2xl md:text-3xl lg:text-4xl">Вход в систему</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Введите свои учетные данные для доступа к панели управления</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
@@ -96,7 +96,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <div className="text-center text-sm text-gray-600">
+        <div className="text-center text-xs sm:text-sm text-gray-600">
           <p>Демо-аккаунты:</p>
           <p>
             <strong>Администратор:</strong> admin / admin123

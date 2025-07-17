@@ -1,4 +1,5 @@
 import { IsString, IsNotEmpty, IsOptional, Matches } from "class-validator"
+import { Transform } from 'class-transformer';
 
 export class CreateCustomerDto {
   @IsString()
@@ -15,7 +16,8 @@ export class CreateCustomerDto {
 
   @IsString()
   @IsNotEmpty()
-  @Matches(/^[A-Z]{2}$/i, { message: 'Серия паспорта должна состоять из 2 латинских букв' })
+  @Transform(({ value }) => value.toUpperCase())
+  @Matches(/^[A-Z]{2}$/, { message: 'Серия паспорта: 2 латинские заглавные буквы' })
   passportSeries: string
 
   @IsString()
@@ -25,7 +27,7 @@ export class CreateCustomerDto {
 
   @IsString()
   @IsNotEmpty()
-  @Matches(/^\+998 \(\d{2}\) \d{3}-\d{2}-\d{2}$/, { message: 'Телефон в формате +998 (90) 123-45-67' })
+  @Matches(/^\+998\d{9}$/, { message: 'Телефон должен быть в формате +998XXXXXXXXX' })
   phone: string
 
   @IsString()

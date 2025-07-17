@@ -132,7 +132,7 @@ export function CreateInstallmentForm({ onSuccess }: CreateInstallmentFormProps)
           <CardTitle>Данные для оформления</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
             {createMutation.error && (
               <Alert variant="destructive">
                 <AlertDescription>{createMutation.error.message}</AlertDescription>

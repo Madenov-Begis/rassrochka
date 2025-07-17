@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2 } from "lucide-react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { customersApi } from "@/services/api"
-import InputMask from "react-input-mask"
+import { PatternFormat  } from 'react-number-format';
 import type { ApiError, ResponseWithMessage } from "@/types/api-response"
 import type { Customer, CustomerBody } from "@/types/store/customers"
 
@@ -54,7 +54,7 @@ export function CreateOrEditCustomerForm({ onSuccess,  initialValues, editMode }
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
       {mutation.error && (
         <Alert variant="destructive">
           <AlertDescription>{ mutation.error.message}</AlertDescription>
@@ -83,17 +83,24 @@ export function CreateOrEditCustomerForm({ onSuccess,  initialValues, editMode }
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="passportSeries">Серия паспорта *</Label>
-          <Input
-            id="passportSeries"
-            {...register("passportSeries", {
+          <Controller
+            name="passportSeries"
+            control={control}
+            rules={{
               required: "Серия паспорта обязательна",
               pattern: {
-                value: /^[A-Z]{2}$/i,
-                message: "Серия паспорта: 2 латинские буквы",
+                value: /^[A-Z]{2}$/,
+                message: "Серия паспорта: 2 латинские заглавные буквы",
               },
-            })}
-            placeholder="AA"
-            maxLength={2}
+            }}
+            render={({ field }) => (
+              <Input
+                {...field}
+                maxLength={2}
+                onChange={e => field.onChange(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2))}
+                placeholder="AA"
+              />
+            )}
           />
           {errors.passportSeries && <p className="text-sm text-red-600">{errors.passportSeries.message as string}</p>}
         </div>
@@ -101,17 +108,26 @@ export function CreateOrEditCustomerForm({ onSuccess,  initialValues, editMode }
         <div className="space-y-2">
           <Label htmlFor="passportNumber">Номер паспорта *</Label>
           <div className="flex gap-2">
-            <Input
-              id="passportNumber"
-              {...register("passportNumber", {
+            <Controller
+              name="passportNumber"
+              control={control}
+              rules={{
                 required: "Номер паспорта обязателен",
                 pattern: {
-                  value: /^\d{7}$/,
-                  message: "Номер паспорта: 7 цифр",
+                  value: /^[0-9]{7}$/,
+                  message: "Номер паспорта: только 7 цифр",
                 },
-              })}
-              placeholder="1234567"
-              maxLength={7}
+              }}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={7}
+                  onChange={e => field.onChange(e.target.value.replace(/\D/g, '').slice(0, 7))}
+                  placeholder="1234567"
+                />
+              )}
             />
           </div>
           {errors.passportNumber && <p className="text-sm text-red-600">{errors.passportNumber.message as string}</p>}
@@ -125,27 +141,22 @@ export function CreateOrEditCustomerForm({ onSuccess,  initialValues, editMode }
           control={control}
           rules={{
             required: "Телефон обязателен",
-            pattern: {
-              value: /^\+998 \(\d{2}\) \d{3}-\d{2}-\d{2}$/,
-              message: "Телефон в формате +998 (90) 123-45-67",
-            },
+            // pattern: {
+            //   value: /^\+998\d{9}$/,
+            //   message: "Телефон должен быть в формате +998XXXXXXXXX",
+            // },
           }}
           render={({ field }) => (
-            <InputMask
-              mask="+998 (99) 999-99-99"
-              value={field.value as string}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
+            <PatternFormat 
+              {...field}
+              format="+998#########"
+              allowEmptyFormatting={true}
+              mask=" "
+              placeholder="+998901234567"
+              customInput={Input}
               disabled={mutation.isPending}
-            >
-              {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => (
-                <Input
-                  id="phone"
-                  {...inputProps}
-                  placeholder="+998 (90) 123-45-67"
-                />
-              )}
-            </InputMask>
+              onValueChange={values => field.onChange(values.value ? `+998${values.value}` : '')}
+            />
           )}
         />
         {errors.phone && <p className="text-sm text-red-600">{errors.phone.message as string}</p>}

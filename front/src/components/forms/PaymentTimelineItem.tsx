@@ -6,8 +6,7 @@
  */
 import React from "react"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Button } from "@/components/ui/button"
+ import { Button } from "@/components/ui/button"
 import type { Payment, PaymentHistory } from "@/types/store/payments"
 
 interface PaymentTimelineItemProps {
@@ -19,20 +18,31 @@ interface PaymentTimelineItemProps {
 
 export const PaymentTimelineItem: React.FC<PaymentTimelineItemProps> = ({ payment, index, onPay, payLoading }) => {
   const paidSum = payment.paymentHistory?.reduce((sum, h) => sum + Number(h.amount), 0) || 0
-  let statusLabel = <Badge>{payment.status === "paid" ? "Оплачен" : payment.status === "overdue" ? "Просрочен" : payment.status === "pending" ? "Ожидает" : payment.status}</Badge>
-  let statusColor = "bg-gray-200 text-gray-700"
-  if (payment.status === "paid") statusColor = "bg-green-100 text-green-700"
-  if (payment.status === "overdue") statusColor = "bg-red-100 text-red-700"
-  if (payment.status === "pending" && paidSum > 0 && paidSum < Number(payment.amount)) {
-    statusLabel = <Badge className="bg-yellow-200 text-yellow-800">Частично</Badge>
-    statusColor = "bg-yellow-100 text-yellow-800"
+  const paidSumRounded = Math.round(paidSum)
+  const amountRounded = Math.round(Number(payment.amount))
+  const EPS = 1 // 1 сум
+
+  let statusLabel: React.ReactNode = null;
+  if (payment.status === "paid" || Math.abs(paidSumRounded - amountRounded) < EPS) {
+    statusLabel = <Badge className="bg-green-100 text-green-800">Оплачен</Badge>;
+  } else if (payment.status === "overdue") {
+    statusLabel = <Badge className="bg-red-100 text-red-800">Просрочен</Badge>;
+  } else if (payment.status === "pending" && paidSumRounded > 0 && paidSumRounded < amountRounded - EPS) {
+    statusLabel = <Badge className="bg-yellow-200 text-yellow-800">Частично</Badge>;
+  } else if (payment.status === "pending") {
+    statusLabel = <Badge className="bg-yellow-100 text-yellow-800">Ожидает</Badge>;
+  } else {
+    statusLabel = <Badge>{payment.status}</Badge>;
   }
+
+  // Остаток по месяцу
+  const monthLeft = Math.max(0, amountRounded - paidSumRounded)
 
   return (
     <div className="relative flex gap-4 min-h-[80px]">
       {/* Timeline line & dot */}
       <div className="flex flex-col items-center">
-        <div className={`w-4 h-4 rounded-full border-2 ${statusColor} flex items-center justify-center font-bold text-xs`}>{index + 1}</div>
+        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center font-bold text-xs`}>{index + 1}</div>
         <div className="flex-1 w-px bg-gray-200" style={{ minHeight: 40 }} />
       </div>
       {/* Card */}
@@ -42,7 +52,7 @@ export const PaymentTimelineItem: React.FC<PaymentTimelineItemProps> = ({ paymen
           <div className="text-base font-bold md:w-32">{Number(payment.amount).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
           <div className="md:w-28">{statusLabel}</div>
           <div className="flex-1" />
-          {(payment.status === "pending" || payment.status === "overdue" || (payment.status === "pending" && paidSum < Number(payment.amount))) && onPay && (
+          {(payment.status === "pending" || payment.status === "overdue" || (payment.status === "pending" && paidSumRounded < amountRounded - EPS)) && onPay && (
             <Button size="sm" onClick={() => onPay(payment.id)} disabled={payLoading}>Оплатить</Button>
           )}
         </div>
@@ -58,9 +68,9 @@ export const PaymentTimelineItem: React.FC<PaymentTimelineItemProps> = ({ paymen
               ))}
             </ul>
             {/* Остаток по месяцу при частичном статусе */}
-            {payment.status === "pending" && paidSum > 0 && paidSum < Number(payment.amount) && (
+            {payment.status === "pending" && paidSumRounded > 0 && paidSumRounded < amountRounded - EPS && (
               <div className="mt-1 text-orange-600 font-semibold">
-                Остаток по месяцу: {(Number(payment.amount) - paidSum).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS
+                Остаток по месяцу: {monthLeft.toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS
               </div>
             )}
           </div>

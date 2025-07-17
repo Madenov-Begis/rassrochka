@@ -19,7 +19,7 @@ export class CreateStoreDto {
 
   @IsString()
   @IsNotEmpty()
-  @Matches(/^\+998 \(\d{2}\) \d{3}-\d{2}-\d{2}$/, { message: 'Телефон в формате +998 (90) 123-45-67' })
+  @Matches(/^\+998\d{9}$/, { message: 'Телефон должен быть в формате +998XXXXXXXXX' })
   phone: string;
 
   @IsOptional()

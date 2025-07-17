@@ -52,7 +52,7 @@
     "react-day-picker": "8.10.1",
     "react-dom": "~18.3.1",
     "react-hook-form": "^7.53.2",
-    "react-input-mask": "^2.0.4",
+    "react-number-format": "^5.4.4",
     "react-resizable-panels": "^2.1.7",
     "react-router-dom": "^6.28.0",
     "react-toastify": "^11.0.5",

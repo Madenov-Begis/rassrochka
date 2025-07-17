@@ -105,31 +105,7 @@ export class UsersService {
     })
   }
 
-  // async updateStatus(id: string, isActive: boolean) {
-  //   const user = await this.prisma.user.findUnique({
-  //     where: { id },
-  //   })
-
-  //   if (!user) {
-  //     throw new NotFoundException("User not found")
-  //   }
-
-  //   return this.prisma.user.update({
-  //     where: { id },
-  //     data: { active: isActive as any },
-  //     select: {
-  //       id: true,
-  //       login: true,
-  //       role: true,
-  //       // isActive: true,
-  //       updatedAt: true,
-  //     },
-  //   })
-  // }
-
   async getActivity(id: number) {
-    // В реальном приложении здесь была бы таблица логов активности
-    // Пока возвращаем заглушку
     return [
       {
         action: "Вход в систему",

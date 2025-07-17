@@ -35,7 +35,7 @@ export const useStatsStore = create<StatsState>((set) => ({
     set({ isLoading: true, error: null })
     try {
       const data = await installmentsApi.getStats()
-      set({ stats: data, isLoading: false })
+      set({ stats: data.data, isLoading: false })
     } catch (e) {
       const err = e as ApiError
       set({ error: err?.message || 'Ошибка загрузки статистики', isLoading: false })

@@ -66,7 +66,7 @@ const storeRoutes = [
   { path: "/store/installments/create", element: <CreateInstallmentPage /> },
   { path: "/store/installments/:id", element: <StoreInstallmentDetail /> },
   { path: "/store/payments", element: <StorePayments /> },
-  { path: "/store/payments/calendar", element: <PaymentsCalendar /> },
+  { path: "/store/calendar", element: <PaymentsCalendar /> },
   { path: "/store/payments/:id", element: <StorePaymentDetail /> },
 ]
 

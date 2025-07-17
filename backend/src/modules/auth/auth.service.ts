@@ -3,6 +3,7 @@ import { JwtService } from "@nestjs/jwt"
 import { PrismaService } from "../../prisma/prisma.service"
 import { LoginDto } from "./dto/login.dto"
 import * as bcrypt from "bcrypt"
+import { StoreStatus } from "@prisma/client"
 
 @Injectable()
 export class AuthService {
@@ -17,14 +18,14 @@ export class AuthService {
       include: { store: true },
     })
 
-    bcrypt.hash('admin123', 10).then((hashed) => {
-      console.log('Hashed password:', hashed);
-    });
-
     if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
       throw new UnauthorizedException("Invalid credentials")
     }
 
+    // Проверка статуса магазина для store_manager
+    if (user.role === 'store_manager' && user.store && user.store.status === StoreStatus.inactive) {
+      throw new UnauthorizedException('Магазин неактивен, вход невозможен');
+    }
 
 
     const payload = {

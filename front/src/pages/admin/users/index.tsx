@@ -105,8 +105,8 @@ export default function AdminUsers() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Пользователи</h1>
-            <p className="text-muted-foreground">Управление пользователями системы</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">Пользователи</h1>
+            <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Управление пользователями системы</p>
           </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
@@ -147,89 +147,83 @@ export default function AdminUsers() {
           </CardContent>
         </Card>
 
-        <Card className="pt-6">
+        {/* Users Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl sm:text-2xl md:text-3xl lg:text-4xl">Список пользователей</CardTitle>
+          </CardHeader>
           <CardContent>
-
-            {isLoading ? (
-              <TableSkeleton />
-            ) : error ? (
-              <div className="text-center py-8 text-red-500">Ошибка загрузки данных</div>
-            ) : users.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">Пользователи не найдены</div>
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Логин</TableHead>
-                      <TableHead>Роль</TableHead>
-                      <TableHead>Магазин</TableHead>
-                      <TableHead>Статус</TableHead>
-                      <TableHead>Создан</TableHead>
-                      <TableHead>Действия</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.id}</TableCell>
-                        <TableCell>{user.login}</TableCell>
-                        <TableCell>{getRoleBadge(user.role)}</TableCell>
-                        <TableCell>{stores.find((store) => store.id === user.storeId)?.name || "-"}</TableCell>
-                        <TableCell>
-                          <Badge
-                            className={
-                              user.status === "active"
-                                ? "bg-green-100 text-green-800"
-                                : user.status === "blocked"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-gray-100 text-gray-600"
-                            }
-                          >
-                            {user.status === "active"
-                              ? "Активен"
+            <div className="overflow-x-auto -mx-2 sm:mx-0">
+              <Table className="min-w-[700px] sm:min-w-0 text-xs sm:text-sm">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap">Логин</TableHead>
+                    <TableHead className="whitespace-nowrap">Роль</TableHead>
+                    <TableHead className="whitespace-nowrap">Статус</TableHead>
+                    <TableHead className="whitespace-nowrap">Магазин</TableHead>
+                    <TableHead className="whitespace-nowrap">Дата создания</TableHead>
+                    <TableHead className="whitespace-nowrap">Действия</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.id}</TableCell>
+                      <TableCell>{user.login}</TableCell>
+                      <TableCell>{getRoleBadge(user.role)}</TableCell>
+                      <TableCell>{stores.find((store) => store.id === user.storeId)?.name || "-"}</TableCell>
+                      <TableCell>
+                        <Badge
+                          className={
+                            user.status === "active"
+                              ? "bg-green-100 text-green-800"
                               : user.status === "blocked"
-                              ? "Заблокирован"
-                              : "Неактивен"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{format(new Date(user.createdAt), "dd MMM yyyy", { locale: ru })}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/users/${user.id}`)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleStatusToggle(user)}
-                              disabled={updateStatusMutation.isPending}
-                            >
-                              {user.status === "active" ? (
-                                <UserX className="h-4 w-4 text-red-500" />
-                              ) : (
-                                <UserCheck className="h-4 w-4 text-green-500" />
-                              )}
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-
-                <Pagination
-                  page={page}
-                  total={total}
-                  limit={limit}
-                  onPageChange={setPage}
-                  className="flex justify-center mt-6"
-                />
-              </>
-            )}
+                              ? "bg-red-100 text-red-800"
+                              : "bg-gray-100 text-gray-600"
+                          }
+                        >
+                          {user.status === "active"
+                            ? "Активен"
+                            : user.status === "blocked"
+                            ? "Заблокирован"
+                            : "Неактивен"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{format(new Date(user.createdAt), "dd MMM yyyy", { locale: ru })}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/users/${user.id}`)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleStatusToggle(user)}
+                            disabled={updateStatusMutation.isPending}
+                          >
+                            {user.status === "active" ? (
+                              <UserX className="h-4 w-4 text-red-500" />
+                            ) : (
+                              <UserCheck className="h-4 w-4 text-green-500" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
+
+        <Pagination
+          page={page}
+          total={total}
+          limit={limit}
+          onPageChange={setPage}
+          className="flex justify-center mt-6"
+        />
       </div>
   )
 }

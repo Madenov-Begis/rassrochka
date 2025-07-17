@@ -81,7 +81,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialValues, onSubmit, mod
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
       <div>
         <label className="block text-sm font-medium mb-1">Логин</label>
         <Input

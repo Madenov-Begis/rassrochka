@@ -65,14 +65,12 @@ export default function AdminStoresPage() {
   const getStatusBadge = (status: string) => {
     const variants = {
       active: "bg-green-100 text-green-800",
-      payment_overdue: "bg-yellow-100 text-yellow-800",
-      blocked: "bg-red-100 text-red-800",
+      inactive: "bg-red-100 text-red-800",
     }
 
     const labels = {
       active: "Активен",
-      payment_overdue: "Просрочка",
-      blocked: "Заблокирован",
+      inactive: "Неактивен",
     }
 
     return <Badge className={variants[status as keyof typeof variants]}>{labels[status as keyof typeof labels]}</Badge>
@@ -82,8 +80,8 @@ export default function AdminStoresPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Магазины</h1>
-            <p className="text-gray-600">Управление сетью магазинов</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">Магазины</h1>
+            <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Управление магазинами</p>
           </div>
           <StoreModal
             open={createOpen}
@@ -168,22 +166,19 @@ export default function AdminStoresPage() {
         {/* Stores Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Список магазинов</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl md:text-3xl lg:text-4xl">Список магазинов</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <TableSkeleton />
-            ) : (
-              <Table>
+            <div className="overflow-x-auto -mx-2 sm:mx-0">
+              <Table className="min-w-[700px] sm:min-w-0 text-xs sm:text-sm">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Название</TableHead>
-                    <TableHead>Адрес</TableHead>
-                    <TableHead>Телефон</TableHead>
-                    <TableHead>Статус</TableHead>
-                    <TableHead>Пользователи</TableHead>
-                    <TableHead>Дата создания</TableHead>
-                    <TableHead>Действия</TableHead>
+                    <TableHead className="whitespace-nowrap">Название</TableHead>
+                    <TableHead className="whitespace-nowrap">Статус</TableHead>
+                    <TableHead className="whitespace-nowrap">Адрес</TableHead>
+                    <TableHead className="whitespace-nowrap">Телефон</TableHead>
+                    <TableHead className="whitespace-nowrap">Дата регистрации</TableHead>
+                    <TableHead className="whitespace-nowrap">Действия</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -194,10 +189,9 @@ export default function AdminStoresPage() {
                       onClick={() => navigate(`/admin/stores/${store.id}`)}
                     >
                       <TableCell className="font-medium">{store.name}</TableCell>
+                      <TableCell>{getStatusBadge(store.status)}</TableCell>
                       <TableCell>{store.address}</TableCell>
                       <TableCell>{store.phone}</TableCell>
-                      <TableCell>{getStatusBadge(store.status)}</TableCell>
-                      <TableCell>{store.users}</TableCell>
                       <TableCell>{new Date(store.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-2">
@@ -227,7 +221,9 @@ export default function AdminStoresPage() {
                   ))}
                 </TableBody>
               </Table>
-            )}
+            </div>
+          </CardContent>
+        </Card>
         <ServerPagination
           page={page}
           total={totalStores}
@@ -235,9 +231,6 @@ export default function AdminStoresPage() {
           onPageChange={setPage}
           className="flex justify-center mt-6"
         />
-          </CardContent>
-        </Card>
-
       </div>
   )
 }

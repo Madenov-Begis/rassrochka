@@ -1,0 +1,21 @@
+{
+  "name": "InstallmentPro",
+  "short_name": "InstallmentPro",
+  "description": "Система управления рассрочками для магазинов и администраторов.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/public/placeholder-logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/public/placeholder-logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+} 

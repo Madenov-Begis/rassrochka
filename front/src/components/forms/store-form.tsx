@@ -5,11 +5,10 @@
  * @created: 2024-07-03
  */
 
-import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import InputMask from 'react-input-mask';
+import { PatternFormat } from 'react-number-format';
 import { CardContent, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -30,7 +29,7 @@ const statusOptions = [
 const storeSchema = z.object({
   name: z.string().min(2, 'Название обязательно'),
   address: z.string().min(5, 'Адрес обязателен'),
-  phone: z.string().regex(/^\+998 \(\d{2}\) \d{3}-\d{2}-\d{2}$/, 'Телефон в формате +998 (90) 123-45-67'),
+  phone: z.string().regex(/^\+998\d{9}$/, 'Телефон должен быть в формате +998XXXXXXXXX'),
   status: z.enum(['active', 'payment_overdue', 'blocked']),
 });
 
@@ -83,7 +82,7 @@ export function StoreForm({ initial, onSuccess, storeId }: StoreFormProps) {
 
   return (
       <Form {...form}>
-        <form onSubmit={handleSubmit(onSubmit)} autoComplete="off">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
           <CardContent className="p-0 space-y-4">
             <FormField
               control={form.control}
@@ -118,18 +117,16 @@ export function StoreForm({ initial, onSuccess, storeId }: StoreFormProps) {
                 <FormItem>
                   <FormLabel>Телефон</FormLabel>
                   <FormControl>
-                    <InputMask
-                      mask="+998 (99) 999-99-99"
-                      maskChar="_" 
-                      value={field.value}
-                      onChange={e => field.onChange(e.target.value)}
+                    <PatternFormat
+                      {...field}
+                      format="+998#########"
+                      allowEmptyFormatting={true}
+                      mask="_"
+                      placeholder="+998 90 123 45 67"
+                      customInput={Input}
                       disabled={isSubmitting}
-                      type="tel"
-                    >
-                      {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => (
-                        <Input {...(inputProps as React.InputHTMLAttributes<HTMLInputElement>)} placeholder="+998 (90) 123-45-67" />
-                      )}
-                    </InputMask>
+                      onValueChange={values => field.onChange(values.value)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

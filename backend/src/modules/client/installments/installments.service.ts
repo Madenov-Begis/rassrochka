@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common"
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common"
 import { PrismaService } from "../../../prisma/prisma.service"
 import { CreateInstallmentDto } from "./dto/create-installment.dto"
 import { Decimal } from "@prisma/client/runtime/library"
@@ -15,6 +15,11 @@ export class InstallmentsService {
     // Получаем клиента
     const customer = await this.prisma.customer.findUnique({ where: { id: Number(customerId) } })
     if (!customer) throw new NotFoundException('Клиент не найден')
+
+    // Проверка: если клиент в чёрном списке этого магазина — запретить оформление рассрочки
+    if (customer.isBlacklisted && customer.storeId === storeId) {
+      throw new BadRequestException('Клиент в чёрном списке этого магазина, оформление рассрочки запрещено')
+    }
 
     // Расчет рассрочки (простые проценты)
     const base = productPrice - downPayment;

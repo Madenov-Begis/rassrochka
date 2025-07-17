@@ -8,9 +8,9 @@ DELETE FROM stores;
 
 -- Вставка магазинов
 INSERT INTO stores (name, address, phone, status, "createdAt", "updatedAt") VALUES
-('Elektronika Center', 'ulitsa Lenina, 45', '+998 (90) 123-45-67', 'active', NOW(), NOW()),
-('TechnoMir', 'prospekt Mira, 123', '+998 (90) 987-65-43', 'payment_overdue', NOW(), NOW()),
-('Tsifrovoy Dom', 'ulitsa Sovetskaya, 78', '+998 (90) 555-12-34', 'blocked', NOW(), NOW());
+('Elektronika Center', 'ulitsa Lenina, 45', '+998907006808', 'active', NOW(), NOW()),
+('TechnoMir', 'prospekt Mira, 123', '+998909876543', 'inactive', NOW(), NOW()),
+('Tsifrovoy Dom', 'ulitsa Sovetskaya, 78', '+998905551234', 'inactive', NOW(), NOW());
 
 -- Получите id магазинов после вставки:
 -- SELECT id, name FROM stores;
@@ -24,9 +24,9 @@ INSERT INTO users (login, password, role, "storeId", "createdAt", "updatedAt") V
 
 -- Вставка клиентов (подставьте реальные storeId)
 INSERT INTO customers ("firstName", "lastName", "middleName", "passportSeries", "passportNumber", phone, address, "isBlacklisted", "storeId", "createdAt", "updatedAt") VALUES
-('Ivan', 'Petrov', 'Sergeevich', 'AA', '1234567', '+998 (90) 111-22-33', 'ulitsa Pushkina, 10', false, 1, NOW(), NOW()),
-('Maria', 'Sidorova', 'Alexandrovna', 'AB', '7654321', '+998 (90) 222-33-44', 'ulitsa Gagarina, 25', false, 1, NOW(), NOW()),
-('Petr', 'Ivanov', 'Mikhailovich', 'AC', '7890123', '+998 (90) 333-44-55', 'prospekt Lenina, 50', true, 2, NOW(), NOW());
+('Ivan', 'Petrov', 'Sergeevich', 'AA', '1234567', '+998901112233', 'ulitsa Pushkina, 10', false, 1, NOW(), NOW()),
+('Maria', 'Sidorova', 'Alexandrovna', 'AB', '7654321', '+998902223344', 'ulitsa Gagarina, 25', false, 1, NOW(), NOW()),
+('Petr', 'Ivanov', 'Mikhailovich', 'AC', '7890123', '+998903334455', 'prospekt Lenina, 50', true, 2, NOW(), NOW());
 
 -- Получите id клиентов после вставки:
 -- SELECT id, "firstName" FROM customers;

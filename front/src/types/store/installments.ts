@@ -1,5 +1,5 @@
 export interface Installment {
-  id: string
+  id: number
   customerId: string
   amount: number
   status: string
@@ -12,7 +12,7 @@ export interface Installment {
   downPayment?: number
   interestRate?: number
   months?: number
-  customer: {
+  customer: { 
     firstName: string
     lastName: string
     phone?: string

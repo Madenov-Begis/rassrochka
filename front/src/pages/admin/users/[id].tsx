@@ -14,6 +14,7 @@ import { toast } from "react-toastify"
 import { UserForm } from "@/components/forms/user-form"
 import type { UserFormValues } from "@/components/forms/user-form"
 import type { AdminStore } from "@/types/admin/store"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export default function UserDetailPage() {
   const { id } = useParams()
@@ -153,9 +154,9 @@ export default function UserDetailPage() {
           <TabsContent value="info" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* User Info */}
-              <Card>
+              <Card className="text-xs sm:text-sm">
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Основная информация</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">Информация о пользователе</CardTitle>
                   <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
               <Edit className="h-4 w-4 mr-2" />
               Редактировать
@@ -286,20 +287,27 @@ export default function UserDetailPage() {
           <TabsContent value="activity">
             <Card>
               <CardHeader>
-                <CardTitle>История активности</CardTitle>
+                <CardTitle className="text-base sm:text-lg">Активность пользователя</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {userActivity?.map((activity: { action: string; timestamp: string; details: string }, index: number) => (
-                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="font-medium">{activity.action}</p>
-                        <p className="text-sm text-gray-600">{new Date(activity.timestamp).toLocaleString()}</p>
-                      </div>
-                      {activity.details && <Badge variant="outline">{activity.details}</Badge>}
-                    </div>
-                  )) || <div className="text-center py-8 text-gray-500">История активности пуста</div>}
+                <div className="overflow-x-auto -mx-2 sm:mx-0">
+                  <Table className="min-w-[700px] sm:min-w-0 text-xs sm:text-sm">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="whitespace-nowrap">Дата</TableHead>
+                        <TableHead className="whitespace-nowrap">Действие</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {userActivity?.map((activity: { action: string; timestamp: string; details: string }, index: number) => (
+                        <TableRow key={index}>
+                          <TableCell className="whitespace-nowrap text-sm text-gray-600">{new Date(activity.timestamp).toLocaleString()}</TableCell>
+                          <TableCell className="font-medium">{activity.action}</TableCell>
+                          {activity.details && <TableCell className="whitespace-nowrap text-sm text-gray-600">{activity.details}</TableCell>}
+                        </TableRow>
+                      )) || <TableRow><TableCell colSpan={3} className="text-center py-8 text-gray-500 text-sm">История активности пуста</TableCell></TableRow>}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>

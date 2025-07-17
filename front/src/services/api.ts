@@ -4,8 +4,11 @@ import type { ApiResponse, PaginatedApiResponse, ResponseWithMessage } from '../
 import type { Customer, CustomerBody, CustomerList, GlobalSearchPassport } from "@/types/store/customers"
 import type { Installment } from "@/types/store/installments"
 import type { Payment } from "@/types/store/payments"
-import type { Store } from "@/types/admin/store"
+import type { AdminStore } from "@/types/admin/store"
 import type { User } from "@/types/admin/user"
+import type { Systemalerts } from "@/types/admin/dashboard"
+import type { StoreChats } from "@/types/store/dashboard"
+import type { AdminStoreDetail } from "@/types/admin/store"
 
 const API_BASE = "http://localhost:3000"
 
@@ -49,8 +52,8 @@ export const authApi = {
 export const adminApi = {
   // Stores
   getStores: (params?: Record<string, string | number>) =>
-    api.get<PaginatedApiResponse<Store[]>>("api/admin/stores", { params }).then((r) => r.data),
-  getStore: (id: string) => api.get<ApiResponse<Store>>(`api/admin/stores/${id}`).then((r) => r.data),
+    api.get<PaginatedApiResponse<AdminStore[]>>("api/admin/stores", { params }).then((r) => r.data),
+  getStore: (id: string) => api.get<ApiResponse<AdminStoreDetail>>(`api/admin/stores/${id}`).then((r) => r.data),
   createStore: (data: Record<string, unknown>) =>
     api.post("api/admin/stores", data).then((r) => r.data),
   updateStore: (id: string, data: Record<string, unknown>) =>
@@ -77,7 +80,7 @@ export const adminApi = {
   // Stats
   getStats: () => api.get("api/admin/stats").then((r) => r.data),
   getTopStores: () => api.get("api/admin/stats/top-stores").then((r) => r.data),
-  getSystemAlerts: () => api.get("api/admin/stats/alerts").then((r) => r.data),
+  getSystemAlerts: () => api.get<ApiResponse<Systemalerts[]>>("api/admin/stats/alerts").then((r) => r.data),
 }
 
 // --- CLIENT ---
@@ -107,7 +110,7 @@ export const installmentsApi = {
   getOne: (id: string) => api.get(`api/client/installments/${id}`).then((r) => r.data),
   payOffEarly: (id: string) =>
     api.put(`api/client/installments/${id}/pay-off-early`).then((r) => r.data),
-  getStats: () => api.get("api/client/stats").then((r) => r.data),
+  getStats: () => api.get<ApiResponse<StoreChats>>("api/client/stats").then((r) => r.data),
 }
 
 export const paymentsApi = {

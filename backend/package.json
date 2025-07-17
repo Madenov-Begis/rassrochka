@@ -20,7 +20,7 @@
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "psql -U postgres -d installment_db -f scripts/seed_fixed.sql"
+    "prisma:seed": "psql -U postgres -d installment_db -f scripts/seed_clean.sql"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -35,6 +35,7 @@
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
+    "exceljs": "^4.4.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",

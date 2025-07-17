@@ -8,7 +8,7 @@ async function main() {
     data: {
       name: 'Электроника Центр',
       address: 'ул. Ленина, 45',
-      phone: '+998 (90) 123-45-67',
+      phone: '+998907006808',
       status: 'active',
     },
   })
@@ -16,16 +16,16 @@ async function main() {
     data: {
       name: 'ТехноМир',
       address: 'пр. Мира, 123',
-      phone: '+998 (90) 987-65-43',
-      status: 'payment_overdue',
+      phone: '+998909876543',
+      status: 'inactive',
     },
   })
   const store3 = await prisma.store.create({
     data: {
       name: 'Цифровой Дом',
       address: 'ул. Советская, 78',
-      phone: '+998 (90) 555-12-34',
-      status: 'blocked',
+      phone: '+998905551234',
+      status: 'inactive',
     },
   })
 
@@ -62,7 +62,7 @@ async function main() {
       middleName: 'Сергеевич',
       passportSeries: 'AA',
       passportNumber: '1234567',
-      phone: '+998 (90) 111-22-33',
+      phone: '+998901112233',
       address: 'ул. Пушкина, 10',
       isBlacklisted: false,
       storeId: store1.id,
@@ -75,7 +75,7 @@ async function main() {
       middleName: 'Александровна',
       passportSeries: 'AB',
       passportNumber: '7654321',
-      phone: '+998 (90) 222-33-44',
+      phone: '+998902223344',
       address: 'ул. Гагарина, 25',
       isBlacklisted: false,
       storeId: store1.id,
@@ -88,7 +88,7 @@ async function main() {
       middleName: 'Михайлович',
       passportSeries: 'AC',
       passportNumber: '7890123',
-      phone: '+998 (90) 333-44-55',
+      phone: '+998903334455',
       address: 'пр. Ленина, 50',
       isBlacklisted: true,
       storeId: store2.id,

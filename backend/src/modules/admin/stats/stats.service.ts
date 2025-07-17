@@ -95,32 +95,8 @@ export class StatsService {
   }
 
   async getSystemAlerts() {
-    const overdueStores = await this.prisma.store.count({
-      where: { status: "payment_overdue" },
-    })
-
-    const blockedStores = await this.prisma.store.count({
-      where: { status: "blocked" },
-    })
-
-    const alerts: { title: string; description: string; severity: string }[] = []
-
-    if (overdueStores > 0) {
-      alerts.push({
-        title: "Магазины с просрочкой",
-        description: `${overdueStores} магазинов имеют просрочку по платежам`,
-        severity: "medium",
-      })
-    }
-
-    if (blockedStores > 0) {
-      alerts.push({
-        title: "Заблокированные магазины",
-        description: `${blockedStores} магазинов заблокированы`,
-        severity: "high",
-      })
-    }
-
-    return alerts
+    // Все магазины теперь только active/inactive, просрочки и блокировки не считаются
+    // Можно добавить другие проверки, если потребуется
+    return [];
   }
 }

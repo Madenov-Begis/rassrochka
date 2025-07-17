@@ -49,7 +49,10 @@ export class PaymentsService {
       if (p.status === "paid" || p.status === "cancelled") continue
       // Сумма всех оплат по этому платежу
       const paidSum = p.paymentHistory.reduce((sum, h) => sum + Number(h.amount), 0)
-      const leftToPay = Number(p.amount) - paidSum
+      const paidSumRounded = Math.round(paidSum)
+      const amountRounded = Math.round(Number(p.amount))
+      const EPS = 1 // 1 сум
+      const leftToPay = Math.max(0, amountRounded - paidSumRounded)
       if (payAmount <= 0 || leftToPay <= 0) break
       if (payAmount >= leftToPay) {
         // Полная оплата платежа
@@ -99,7 +102,10 @@ export class PaymentsService {
     })
     for (const p of stillPending) {
       const paidSum = p.paymentHistory.reduce((sum, h) => sum + Number(h.amount), 0)
-      if (paidSum >= Number(p.amount)) {
+      const paidSumRounded = Math.round(paidSum)
+      const amountRounded = Math.round(Number(p.amount))
+      const EPS = 1
+      if (Math.abs(paidSumRounded - amountRounded) < EPS) {
         await this.prisma.payment.update({
           where: { id: p.id },
           data: { status: "paid", paidDate: new Date() },
@@ -152,15 +158,19 @@ export class PaymentsService {
   }
 
   async getUpcoming(storeId: number) {
-    const nextWeek = new Date()
-    nextWeek.setDate(nextWeek.getDate() + 7)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    nextWeek.setHours(23, 59, 59, 999);
 
     return this.prisma.payment.findMany({
       where: {
         installment: { storeId },
         status: "pending",
         dueDate: {
-          gte: new Date(),
+          gte: today,
           lte: nextWeek,
         },
       },
@@ -199,6 +209,9 @@ export class PaymentsService {
         { installment: { customer: { lastName: { contains: search, mode: "insensitive" } } } },
         { installment: { productName: { contains: search, mode: "insensitive" } } },
       ];
+    }
+    if (query.status) {
+      where.status = query.status;
     }
     const [items, total] = await Promise.all([
       this.prisma.payment.findMany({
