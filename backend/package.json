@@ -20,7 +20,7 @@
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "psql -U postgres -d installment_db -f scripts/seed_clean.sql"
+    "prisma:seed": "ts-node scripts/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
