@@ -31,7 +31,6 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  keepPreviousData,
   useQuery,
   useQueryClient,
   useMutation,
@@ -39,12 +38,10 @@ import {
 import { customersApi } from '@/services/api';
 import { DashboardSkeleton } from '@/components/loading/dashboard-skeleton';
 import { CreateOrEditCustomerForm } from '@/components/forms/create-customer-form';
-import { Pagination as ServerPagination } from '@/components/pagination';
 import { toast } from 'react-toastify';
 import type {
   ApiError,
   ApiResponse,
-  PaginatedApiResponse,
 } from '@/types/api-response';
 import type { Customer } from '@/types/store/customers';
 import type { Installment } from '@/types/store/installments';
@@ -54,8 +51,6 @@ export default function CustomerDetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [installmentsPage, setInstallmentsPage] = useState(1);
-  const installmentsLimit = 10;
   const [isBlacklistDialogOpen, setIsBlacklistDialogOpen] = useState(false);
 
   const { data: customer, isLoading } = useQuery<
