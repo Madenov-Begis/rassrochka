@@ -1,6 +1,6 @@
 {
-  "name": "InstallmentPro",
-  "short_name": "InstallmentPro",
+  "name": "Qolay",
+  "short_name": "Qolay",
   "description": "Система управления рассрочками для магазинов и администраторов.",
   "start_url": ".",
   "display": "standalone",
