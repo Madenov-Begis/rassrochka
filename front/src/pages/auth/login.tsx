@@ -45,7 +45,7 @@ export default function LoginPage() {
           <div className="mx-auto h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
             <CreditCard className="h-7 w-7 text-white" />
           </div>
-          <h2 className="mt-4 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">InstallmentPro</h2>
+          <h2 className="mt-4 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">QOLAY</h2>
           <p className="mt-1 text-xs sm:text-sm text-gray-600">Система управления рассрочками</p>
         </div>
 

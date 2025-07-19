@@ -82,7 +82,7 @@ export function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
           <CreditCard className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h1 className="font-semibold text-lg">InstallmentPro</h1>
+          <h1 className="font-semibold text-lg">QOLAY</h1>
           <p className="text-xs text-gray-500">
             {user?.role === 'admin' ? 'Админ-панель' : 'Панель магазина'}
           </p>
