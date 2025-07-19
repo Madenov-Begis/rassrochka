@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Search, Eye, Plus, UserCheck, UserX } from 'lucide-react';
+import { Search, Eye, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { toast } from 'react-toastify';
@@ -31,7 +31,7 @@ import { UserForm } from '@/components/forms/user-form';
 import type { UserFormValues } from '@/components/forms/user-form';
 import type { AdminStore } from '@/types/admin/store';
 import type { PaginatedApiResponse } from '@/types/api-response';
-import type { User } from '@/types/admin/user';
+import type { AdminUser } from '@/types/admin/user';
 
 export default function AdminUsers() {
   const navigate = useNavigate();
@@ -43,7 +43,7 @@ export default function AdminUsers() {
   const limit = 10;
   const [stores, setStores] = useState<AdminStore[]>([]);
 
-  const { data } = useQuery<PaginatedApiResponse<User[]>>({
+  const { data } = useQuery<PaginatedApiResponse<AdminUser[]>>({
     queryKey: ['admin-users', { page, limit, search: debouncedSearch }],
     queryFn: () => adminApi.getUsers({ page, limit, search: debouncedSearch }),
   });
@@ -72,20 +72,6 @@ export default function AdminUsers() {
     },
   });
 
-  const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
-      adminApi.updateUserStatus(id, status === 'active'),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success('Статус пользователя обновлен');
-    },
-    onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(
-        'Не удалось обновить статус: ' + error.response?.data?.message,
-      );
-    },
-  });
-
   const users = data?.data?.items || [];
   const total = data?.data?.total || 0;
 
@@ -108,12 +94,6 @@ export default function AdminUsers() {
       ...values,
       storeId: values.role === 'store_manager' ? values.storeId : null,
     });
-    setIsCreateDialogOpen(false);
-  };
-
-  const handleStatusToggle = (user: User) => {
-    const newStatus = user.status === 'active' ? 'blocked' : 'active';
-    updateStatusMutation.mutate({ id: user.id.toString(), status: newStatus });
   };
 
   return (
@@ -233,18 +213,6 @@ export default function AdminUsers() {
                           onClick={() => navigate(`/admin/users/${user.id}`)}
                         >
                           <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleStatusToggle(user)}
-                          disabled={updateStatusMutation.isPending}
-                        >
-                          {user.status === 'active' ? (
-                            <UserX className="h-4 w-4 text-red-500" />
-                          ) : (
-                            <UserCheck className="h-4 w-4 text-green-500" />
-                          )}
                         </Button>
                       </div>
                     </TableCell>

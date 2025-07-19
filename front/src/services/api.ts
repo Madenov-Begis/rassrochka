@@ -1,127 +1,195 @@
-import axios from "axios"
-import { useAuthStore } from "../store/auth-store"
-import type { ApiResponse, PaginatedApiResponse, ResponseWithMessage } from '../types/api-response'
-import type { Customer, CustomerBody, CustomerList, GlobalSearchPassport } from "@/types/store/customers"
-import type { Installment } from "@/types/store/installments"
-import type { Payment } from "@/types/store/payments"
-import type { AdminStore, PaymentDetail } from "@/types/admin/store"
-import type { User } from "@/types/admin/user"
-import type { Systemalerts } from "@/types/admin/dashboard"
-import type { StoreChats } from "@/types/store/dashboard"
-import type { AdminStoreDetail } from "@/types/admin/store"
+import axios from 'axios';
+import { useAuthStore } from '../store/auth-store';
+import type {
+  ApiResponse,
+  PaginatedApiResponse,
+  ResponseWithMessage,
+} from '../types/api-response';
+import type {
+  Customer,
+  CustomerBody,
+  CustomerList,
+  GlobalSearchPassport,
+} from '@/types/store/customers';
+import type { Installment } from '@/types/store/installments';
+import type { Payment } from '@/types/store/payments';
+import type { AdminStore, PaymentDetail } from '@/types/admin/store';
+import type { AdminUser, UserBody } from '@/types/admin/user';
+import type { Systemalerts } from '@/types/admin/dashboard';
+import type { StoreChats } from '@/types/store/dashboard';
+import type { AdminStoreDetail } from '@/types/admin/store';
 
-const API_BASE = import.meta.env.VITE_API_URL
+const API_BASE = import.meta.env.VITE_API_URL;
 
 export const api = axios.create({
   baseURL: API_BASE,
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
-})
+});
 
 // Request interceptor: добавляет токен авторизации
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token
+  const token = useAuthStore.getState().token;
   if (token) {
-    config.headers = config.headers || {}
-    config.headers["Authorization"] = `Bearer ${token}`
+    config.headers = config.headers || {};
+    config.headers['Authorization'] = `Bearer ${token}`;
   }
-  return config
-})
+  return config;
+});
 
 // Response interceptor: обработка 401
 api.interceptors.response.use(
-    (response) => response  ,
+  (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      useAuthStore.getState().logout()
-      window.location.href = "/login"
+      useAuthStore.getState().logout();
+      window.location.href = '/login';
     }
-    return Promise.reject(error.response?.data)
-  }
-)
+    return Promise.reject(error.response?.data);
+  },
+);
 
 // --- AUTH ---
 export const authApi = {
   login: (credentials: { login: string; password: string }) =>
-    api.post("api/auth/login", credentials).then((r) => r.data),
-  me: () => api.get("api/auth/me").then((r) => r.data),
-}
+    api.post('api/auth/login', credentials).then((r) => r.data),
+  me: () => api.get('api/auth/me').then((r) => r.data),
+};
 
 // --- ADMIN ---
 export const adminApi = {
   // Stores
   getStores: (params?: Record<string, string | number>) =>
-    api.get<PaginatedApiResponse<AdminStore[]>>("api/admin/stores", { params }).then((r) => r.data),
-  getStore: (id: string) => api.get<ApiResponse<AdminStoreDetail>>(`api/admin/stores/${id}`).then((r) => r.data),
+    api
+      .get<PaginatedApiResponse<AdminStore[]>>('api/admin/stores', { params })
+      .then((r) => r.data),
+  getStore: (id: string) =>
+    api
+      .get<ApiResponse<AdminStoreDetail>>(`api/admin/stores/${id}`)
+      .then((r) => r.data),
   createStore: (data: Record<string, unknown>) =>
-    api.post("api/admin/stores", data).then((r) => r.data),
+    api.post('api/admin/stores', data).then((r) => r.data),
   updateStore: (id: string, data: Record<string, unknown>) =>
     api.put(`api/admin/stores/${id}`, data).then((r) => r.data),
-  deleteStore: (id: string) => api.delete(`api/admin/stores/${id}`).then((r) => r.data),
+  deleteStore: (id: string) =>
+    api.delete(`api/admin/stores/${id}`).then((r) => r.data),
   updateStoreStatus: (id: string, status: string) =>
     api.put(`api/admin/stores/${id}/status`, { status }).then((r) => r.data),
-  getStoreStats: (id: string) => api.get(`api/admin/stores/${id}/stats`).then((r) => r.data),
-  getStoreUsers: (id: string) => api.get(`api/admin/stores/${id}/users`).then((r) => r.data),
-  getStoreInstallments: (id: string) => api.get(`api/admin/stores/${id}/installments`).then((r) => r.data),
+  getStoreStats: (id: string) =>
+    api.get(`api/admin/stores/${id}/stats`).then((r) => r.data),
+  getStoreUsers: (id: string) =>
+    api.get(`api/admin/stores/${id}/users`).then((r) => r.data),
+  getStoreInstallments: (id: string) =>
+    api.get(`api/admin/stores/${id}/installments`).then((r) => r.data),
 
   // Users
   getUsers: (params?: Record<string, string | number>) =>
-    api.get<PaginatedApiResponse<User[]>>("api/admin/users", { params }).then((r) => r.data),
+    api
+      .get<PaginatedApiResponse<AdminUser[]>>('api/admin/users', { params })
+      .then((r) => r.data),
   getUser: (id: string) => api.get(`api/admin/users/${id}`).then((r) => r.data),
-  createUser: (data: Record<string, unknown>) =>
-    api.post("api/admin/users", data).then((r) => r.data),
-  updateUserStatus: (id: string, isActive: boolean) =>
-    api.put(`api/admin/users/${id}/status`, { isActive }).then((r) => r.data),
-  getUserActivity: (id: string) => api.get(`api/admin/users/${id}/activity`).then((r) => r.data),
-  updateUser: (id: string, data: Record<string, unknown>) =>
+  createUser: (data: UserBody) =>
+    api.post('api/admin/users', data).then((r) => r.data),
+  getUserActivity: (id: string) =>
+    api.get(`api/admin/users/${id}/activity`).then((r) => r.data),
+  updateUser: ({ id, data }: { id: string; data: UserBody }) =>
     api.put(`api/admin/users/${id}`, data).then((r) => r.data),
 
   // Stats
-  getStats: () => api.get("api/admin/stats").then((r) => r.data),
-  getTopStores: () => api.get("api/admin/stats/top-stores").then((r) => r.data),
-  getSystemAlerts: () => api.get<ApiResponse<Systemalerts[]>>("api/admin/stats/alerts").then((r) => r.data),
-}
+  getStats: () => api.get('api/admin/stats').then((r) => r.data),
+  getTopStores: () => api.get('api/admin/stats/top-stores').then((r) => r.data),
+  getSystemAlerts: () =>
+    api
+      .get<ApiResponse<Systemalerts[]>>('api/admin/stats/alerts')
+      .then((r) => r.data),
+};
 
 // --- CLIENT ---
 export const customersApi = {
   getAll: (params?: Record<string, string | number>) =>
-    api.get<PaginatedApiResponse<Customer[]>>("api/client/customers", { params }).then((r) => r.data),
-  getOne: (id: string) => api.get<ApiResponse<Customer>>(`api/client/customers/${id}`).then((r) => r.data),
+    api
+      .get<PaginatedApiResponse<Customer[]>>('api/client/customers', { params })
+      .then((r) => r.data),
+  getOne: (id: string) =>
+    api
+      .get<ApiResponse<Customer>>(`api/client/customers/${id}`)
+      .then((r) => r.data),
   create: (data: CustomerBody) =>
-    api.post<ResponseWithMessage>("api/client/customers", data).then((r) => r.data),
+    api
+      .post<ResponseWithMessage>('api/client/customers', data)
+      .then((r) => r.data),
   updateBlacklist: (id: string, isBlacklisted: boolean) =>
-    api.put<ResponseWithMessage>(`api/client/customers/${id}/blacklist`, { isBlacklisted }).then((r) => r.data),
-  searchByPassportGlobal: ({ series, number }: { series: string, number: string }) =>
-    api.get<ApiResponse<GlobalSearchPassport>>(`api/client/customers/search-global`, { params: { series, number } }).then((r) => r.data),
+    api
+      .put<ResponseWithMessage>(`api/client/customers/${id}/blacklist`, {
+        isBlacklisted,
+      })
+      .then((r) => r.data),
+  searchByPassportGlobal: ({
+    series,
+    number,
+  }: {
+    series: string;
+    number: string;
+  }) =>
+    api
+      .get<ApiResponse<GlobalSearchPassport>>(
+        `api/client/customers/search-global`,
+        { params: { series, number } },
+      )
+      .then((r) => r.data),
   update: (id: string, data: CustomerBody) =>
-    api.put<ResponseWithMessage>(`api/client/customers/${id}`, data).then((r) => r.data),
+    api
+      .put<ResponseWithMessage>(`api/client/customers/${id}`, data)
+      .then((r) => r.data),
   getInstallments: (id: string, params?: Record<string, string | number>) =>
-    api.get<PaginatedApiResponse<Installment[]>>(`api/client/customers/${id}/installments`, { params }).then((r) => r.data),
+    api
+      .get<PaginatedApiResponse<Installment[]>>(
+        `api/client/customers/${id}/installments`,
+        { params },
+      )
+      .then((r) => r.data),
   list: () =>
-    api.get<ApiResponse<CustomerList[]>>("api/client/customers/list").then((r) => r.data),
-}
+    api
+      .get<ApiResponse<CustomerList[]>>('api/client/customers/list')
+      .then((r) => r.data),
+};
 
 export const installmentsApi = {
   getAll: (params?: Record<string, string | number>) =>
-    api.get<PaginatedApiResponse<Installment[]>>(`api/client/installments`, { params }).then((r) => r.data),
+    api
+      .get<PaginatedApiResponse<Installment[]>>(`api/client/installments`, {
+        params,
+      })
+      .then((r) => r.data),
   create: (data: Record<string, unknown>) =>
-    api.post("api/client/installments", data).then((r) => r.data),
-  getOne: (id: string) => api.get(`api/client/installments/${id}`).then((r) => r.data),
+    api.post('api/client/installments', data).then((r) => r.data),
+  getOne: (id: string) =>
+    api.get(`api/client/installments/${id}`).then((r) => r.data),
   payOffEarly: (id: string) =>
     api.put(`api/client/installments/${id}/pay-off-early`).then((r) => r.data),
-  getStats: () => api.get<ApiResponse<StoreChats>>("api/client/stats").then((r) => r.data),
-}
+  getStats: () =>
+    api.get<ApiResponse<StoreChats>>('api/client/stats').then((r) => r.data),
+};
 
 export const paymentsApi = {
   getAll: (params?: Record<string, string | number>) =>
-    api.get<PaginatedApiResponse<Payment[]>>("api/client/payments", { params }).then((r) => r.data),
-  getOne: (id: string) => api.get<ApiResponse<PaymentDetail>>(`api/client/payments/${id}`).then((r) => r.data),
+    api
+      .get<PaginatedApiResponse<Payment[]>>('api/client/payments', { params })
+      .then((r) => r.data),
+  getOne: (id: string) =>
+    api
+      .get<ApiResponse<PaymentDetail>>(`api/client/payments/${id}`)
+      .then((r) => r.data),
   getByInstallment: (installmentId: string) =>
-    api.get(`api/client/installments/${installmentId}/payments`).then((r) => r.data),
+    api
+      .get(`api/client/installments/${installmentId}/payments`)
+      .then((r) => r.data),
   markPaid: (paymentId: string, amount: number) =>
-    api.put(`api/client/payments/${paymentId}/mark-paid`, { amount }).then((r) => r.data),
-  getOverdue: () => api.get("api/client/payments/overdue").then((r) => r.data),
-  getUpcoming: () => api.get("api/client/payments/upcoming").then((r) => r.data),
-}
-
+    api
+      .put(`api/client/payments/${paymentId}/mark-paid`, { amount })
+      .then((r) => r.data),
+  getOverdue: () => api.get('api/client/payments/overdue').then((r) => r.data),
+  getUpcoming: () =>
+    api.get('api/client/payments/upcoming').then((r) => r.data),
+};

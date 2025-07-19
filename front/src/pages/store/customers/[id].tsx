@@ -30,19 +30,12 @@ import {
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  useQuery,
-  useQueryClient,
-  useMutation,
-} from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { customersApi } from '@/services/api';
 import { DashboardSkeleton } from '@/components/loading/dashboard-skeleton';
 import { CreateOrEditCustomerForm } from '@/components/forms/create-customer-form';
 import { toast } from 'react-toastify';
-import type {
-  ApiError,
-  ApiResponse,
-} from '@/types/api-response';
+import type { ApiError, ApiResponse } from '@/types/api-response';
 import type { Customer } from '@/types/store/customers';
 import type { Installment } from '@/types/store/installments';
 
@@ -113,18 +106,24 @@ export default function CustomerDetailPage() {
 
   const installments = customer.data?.installments || [];
   const totalInstallments = installments.length;
-  const activeInstallments = installments.filter((i: Installment) => i.status === 'active').length;
-  const overdueInstallments = installments.filter((i: Installment) => i.status === 'overdue').length;
-  const totalAmount = installments.reduce((sum: number, i: Installment) => sum + Number(i.totalAmount), 0);
+  const activeInstallments = installments.filter(
+    (i: Installment) => i.status === 'active',
+  ).length;
+  const overdueInstallments = installments.filter(
+    (i: Installment) => i.status === 'overdue',
+  ).length;
+  const totalAmount = installments.reduce(
+    (sum: number, i: Installment) => sum + Number(i.totalAmount),
+    0,
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-4">
+      <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Назад
+      </Button>
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Назад
-        </Button>
         <div className="flex-1">
           <h1 className="text-3xl font-bold">
             {customer.data?.lastName} {customer.data?.firstName}{' '}
@@ -216,7 +215,9 @@ export default function CustomerDetailPage() {
             {/* Personal Info */}
             <Card className="text-xs sm:text-sm">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-base sm:text-lg">Личная информация</CardTitle>
+                <CardTitle className="text-base sm:text-lg">
+                  Личная информация
+                </CardTitle>
                 <Button
                   variant="outline"
                   size="sm"
@@ -372,7 +373,9 @@ export default function CustomerDetailPage() {
         <TabsContent value="installments" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base sm:text-lg">Рассрочки клиента</CardTitle>
+              <CardTitle className="text-base sm:text-lg">
+                Рассрочки клиента
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto -mx-2 sm:mx-0">
@@ -381,8 +384,12 @@ export default function CustomerDetailPage() {
                     <TableRow>
                       <TableHead className="whitespace-nowrap">Товар</TableHead>
                       <TableHead className="whitespace-nowrap">Сумма</TableHead>
-                      <TableHead className="whitespace-nowrap">Статус</TableHead>
-                      <TableHead className="whitespace-nowrap">Дата оформления</TableHead>
+                      <TableHead className="whitespace-nowrap">
+                        Статус
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap">
+                        Дата оформления
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -409,18 +416,14 @@ export default function CustomerDetailPage() {
                           {getStatusBadge(installment.status)}
                         </TableCell>
                         <TableCell>
-                          {new Date(
-                            installment.createdAt,
-                          ).toLocaleDateString()}
+                          {new Date(installment.createdAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() =>
-                              navigate(
-                                `/store/installments/${installment.id}`,
-                              )
+                              navigate(`/store/installments/${installment.id}`)
                             }
                           >
                             Подробнее
@@ -454,27 +457,25 @@ export default function CustomerDetailPage() {
                   </div>
                 </div>
 
-                {installments.map(
-                  (installment: Installment) => (
-                    <div
-                      key={installment.id}
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="font-medium">
-                          Создана рассрочка: {installment.productName}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(installment.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                      <Badge variant="outline">
-                        {getStatusBadge(installment.status)}
-                      </Badge>
+                {installments.map((installment: Installment) => (
+                  <div
+                    key={installment.id}
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <div className="flex-1">
+                      <p className="font-medium">
+                        Создана рассрочка: {installment.productName}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {new Date(installment.createdAt).toLocaleString()}
+                      </p>
                     </div>
-                  ),
-                )}
+                    <Badge variant="outline">
+                      {getStatusBadge(installment.status)}
+                    </Badge>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

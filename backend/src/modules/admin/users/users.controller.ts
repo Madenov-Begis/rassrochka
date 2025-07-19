@@ -46,6 +46,9 @@ export class UsersController {
 
   @Put(':id')
   async updateUser(@Param('id') id: number, @Body() update: { login?: string; role?: string; storeId?: number; status?: string; password?: string }) {
-    return this.usersService.updateUser(id, update);
+    return this.usersService.updateUser(Number(id), {
+      ...update,
+      storeId: update.storeId ? Number(update.storeId) : update.storeId
+    });
   }
 }

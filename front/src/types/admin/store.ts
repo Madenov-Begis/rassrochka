@@ -1,5 +1,5 @@
 import type { Installment } from '../store/installments';
-import type { User } from './user';
+import type { AdminUser } from './user';
 
 export interface AdminStore {
   id: number;
@@ -20,7 +20,7 @@ export interface AdminStoreDetail {
   status: string;
   createdAt: string;
   updatedAt: string;
-  users: User[];
+  users: AdminUser[];
   installments: Installment[];
 }
 

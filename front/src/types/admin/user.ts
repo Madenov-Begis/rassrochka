@@ -1,10 +1,18 @@
 import type { AdminStore } from "./store";
-export interface User {
+export interface AdminUser {
   id: number;
   login: string;
-  role: string;
+  role: 'admin' | 'store_manager';
   storeId: number;
   createdAt: string;
-  status: string;
+  status: 'active' | 'inactive' | 'blocked';
   store: AdminStore | null;
+}
+
+export interface UserBody {
+  login: string
+  role: "admin" | "store_manager",
+  status?: "active"| "blocked"| "inactive"
+  storeId?: string | null,
+  password?: string | undefined,
 }

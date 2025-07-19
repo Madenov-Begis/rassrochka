@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 export default function CreateInstallmentPage() {
   const navigate = useNavigate();
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-3xl font-bold">Оформление рассрочки</h1>
+        <h1 className="text-xl md:text-3xl font-bold">Оформление рассрочки</h1>
         <Button
           variant="outline"
           onClick={() => navigate('/store/installments')}

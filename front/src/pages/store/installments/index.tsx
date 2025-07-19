@@ -123,7 +123,7 @@ export default function InstallmentsPage() {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>Фильтры</CardTitle>
+          <CardTitle className="text-lg md:text-2xl">Фильтры</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4">

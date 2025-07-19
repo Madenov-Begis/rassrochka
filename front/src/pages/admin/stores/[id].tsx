@@ -44,7 +44,7 @@ import { toast } from 'react-toastify';
 import type { ApiError, ApiResponse } from '@/types/api-response';
 import type { AdminStoreDetail } from '@/types/admin/store';
 import type { Installment } from '@/types/store/installments';
-import type { User } from '@/types/admin/user';
+import type { AdminUser } from '@/types/admin/user';
 import { ImportModal } from '../../../components/forms/import-modal';
 
 export default function StoreDetailPage() {
@@ -399,7 +399,7 @@ export default function StoreDetailPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {store.data?.users?.map((user: User) => (
+                  {store.data?.users?.map((user: AdminUser) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">
                         {user.login}

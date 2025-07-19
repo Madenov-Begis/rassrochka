@@ -34,7 +34,7 @@ export const UserForm: React.FC<UserFormProps> = ({ initialValues, onSubmit, mod
     login: initialValues.login || "",
     role: initialValues.role || "store_manager",
     status: initialValues.status || "active",
-    storeId: initialValues.storeId || "",
+    storeId: initialValues.storeId || undefined,
     password: "",
   });
   const [errors, setErrors] = useState<Partial<Record<keyof UserFormValues, string>>>({});

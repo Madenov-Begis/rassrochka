@@ -182,18 +182,19 @@ export default function InstallmentDetailPage() {
     Number(installment?.data?.downPayment);
   const months = Number(installment?.data?.months) || 1;
   const principalPerMonth = base / months;
-  const paidCount = payments?.data?.filter((p: Payment) => p.status === 'paid').length || 0;
+  const paidCount =
+    payments?.data?.filter((p: Payment) => p.status === 'paid').length || 0;
   const remainingBase = Math.max(0, base - paidCount * principalPerMonth);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-4">
+      <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Назад
+      </Button>
+
       <div className="flex items-center gap-4 justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Назад
-          </Button>
           <div className="flex-1">
             <h1 className="text-3xl font-bold">
               {installment?.data?.productName}
@@ -382,10 +383,11 @@ export default function InstallmentDetailPage() {
             <div className="flex justify-between border-t pt-2">
               <span className="text-sm font-medium">Общая сумма:</span>
               <span className="font-bold">
-                {(earlyPayoffMutation.data?.newTotalAmount ?? installment?.data?.totalAmount ?? 0).toLocaleString(
-                  'ru-RU',
-                  { maximumFractionDigits: 0 },
-                )}{' '}
+                {(
+                  earlyPayoffMutation.data?.newTotalAmount ??
+                  installment?.data?.totalAmount ??
+                  0
+                ).toLocaleString('ru-RU', { maximumFractionDigits: 0 })}{' '}
                 UZS
               </span>
             </div>
@@ -468,7 +470,9 @@ export default function InstallmentDetailPage() {
       {/* Payments Timeline */}
       <Card className="text-xs sm:text-sm">
         <CardHeader>
-          <CardTitle className="text-base sm:text-lg">График платежей</CardTitle>
+          <CardTitle className="text-base sm:text-lg">
+            График платежей
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

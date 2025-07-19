@@ -32,13 +32,14 @@ export default function PaymentDetailPage() {
   const queryClient = useQueryClient();
   const [isMarkPaidOpen, setIsMarkPaidOpen] = useState(false);
 
-  const { data: payment, isLoading } = useQuery<ApiResponse<PaymentDetail>, ApiError>(
-    {
-      queryKey: ['payment', id],
-      queryFn: () => paymentsApi.getOne(id as string),
-      enabled: !!id,
-    },
-  );
+  const { data: payment, isLoading } = useQuery<
+    ApiResponse<PaymentDetail>,
+    ApiError
+  >({
+    queryKey: ['payment', id],
+    queryFn: () => paymentsApi.getOne(id as string),
+    enabled: !!id,
+  });
 
   // Удаляем второй запрос к installmentsApi.getOne
   // const { data: installment } = useQuery<ApiResponse<Installment>, ApiError>({ ... });
@@ -48,8 +49,13 @@ export default function PaymentDetailPage() {
   const customer = installment?.customer;
 
   const markPaidMutation = useMutation({
-    mutationFn: ({ paymentId, amount }: { paymentId: string; amount: number }) =>
-      paymentsApi.markPaid(paymentId, amount),
+    mutationFn: ({
+      paymentId,
+      amount,
+    }: {
+      paymentId: string;
+      amount: number;
+    }) => paymentsApi.markPaid(paymentId, amount),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payment', id] });
       queryClient.invalidateQueries({
@@ -108,13 +114,12 @@ export default function PaymentDetailPage() {
     : 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-4">
+      <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Назад
+      </Button>
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Назад
-        </Button>
         <div className="flex-1">
           <h1 className="text-3xl font-bold">Платеж #{payment.data?.id}</h1>
           <p className="text-gray-600">Детали платежа</p>
@@ -198,17 +203,15 @@ export default function PaymentDetailPage() {
                 <p className="font-medium">
                   {customer?.lastName} {customer?.firstName}
                 </p>
-                <p className="text-sm text-gray-600">
-                  {customer?.phone}
-                </p>
+                <p className="text-sm text-gray-600">{customer?.phone}</p>
               </div>
               <div className="flex gap-2">
-              <Button
-                variant="outline"
+                <Button
+                  variant="outline"
                   onClick={() => navigate(`/store/customers/${customer?.id}`)}
-              >
-                Профиль клиента
-              </Button>
+                >
+                  Профиль клиента
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -251,9 +254,7 @@ export default function PaymentDetailPage() {
 
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Срок:</span>
-                <span className="font-medium">
-                  {installment?.months} мес.
-                </span>
+                <span className="font-medium">{installment?.months} мес.</span>
               </div>
 
               <Button
@@ -366,7 +367,9 @@ export default function PaymentDetailPage() {
               <div className="flex-1">
                 <p className="font-medium">Платеж создан</p>
                 <p className="text-sm text-gray-600">
-                  {payment.data?.createdAt ? new Date(payment.data.createdAt).toLocaleString() : ''}
+                  {payment.data?.createdAt
+                    ? new Date(payment.data.createdAt).toLocaleString()
+                    : ''}
                 </p>
               </div>
             </div>
@@ -391,7 +394,9 @@ export default function PaymentDetailPage() {
                   <p className="font-medium">Платеж просрочен</p>
                   <p className="text-sm text-gray-600">
                     Просрочка с{' '}
-                    {payment.data?.dueDate ? new Date(payment.data.dueDate).toLocaleDateString() : ''}
+                    {payment.data?.dueDate
+                      ? new Date(payment.data.dueDate).toLocaleDateString()
+                      : ''}
                   </p>
                 </div>
                 <AlertTriangle className="h-5 w-5 text-red-500" />
