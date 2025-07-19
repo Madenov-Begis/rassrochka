@@ -26,6 +26,8 @@ interface AuthState {
   clearError: () => void
 }
 
+const API_BASE = import.meta.env.VITE_API_URL
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -39,7 +41,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null })
 
         try {
-          const response = await fetch(`http://localhost:3000/api/auth/login`, {
+          const response = await fetch(`${API_BASE}/api/auth/login`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

@@ -10,7 +10,7 @@ import type { Systemalerts } from "@/types/admin/dashboard"
 import type { StoreChats } from "@/types/store/dashboard"
 import type { AdminStoreDetail } from "@/types/admin/store"
 
-const API_BASE = "http://localhost:3000"
+const API_BASE = import.meta.env.VITE_API_URL
 
 export const api = axios.create({
   baseURL: API_BASE,

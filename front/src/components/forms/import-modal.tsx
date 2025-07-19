@@ -28,6 +28,8 @@ interface ImportModalProps {
   endpoint: string;
 }
 
+const API_BASE = import.meta.env.VITE_API_URL
+
 export const ImportModal: React.FC<ImportModalProps> = ({
   open,
   onOpenChange,
@@ -63,7 +65,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
       const formData = new FormData();
       formData.append('file', file);
       const res = await axios.post(
-        `http://localhost:3000${endpoint}`,
+        `${API_BASE}${endpoint}`,
         formData,
         {
           headers: {

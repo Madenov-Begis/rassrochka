@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { VitePWA } from 'vite-plugin-pwa';
+import manifest from './manifest.json' assert { type: 'json' }
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -9,7 +10,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      manifest: require('./manifest.json'),
+      manifest,
       workbox: {
         // Не кешировать страницы и API
         runtimeCaching: []
