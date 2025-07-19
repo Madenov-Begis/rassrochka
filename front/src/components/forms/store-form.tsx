@@ -22,14 +22,13 @@ import type { ApiError } from '@/types/api-response';
 
 const statusOptions = [
   { value: 'active', label: 'Активен' },
-  { value: 'payment_overdue', label: 'Просрочка' },
-  { value: 'blocked', label: 'Заблокирован' },
+  { value: 'inactive', label: 'Неактивен' },
 ];
 
 const storeSchema = z.object({
   name: z.string().min(2, 'Название обязательно'),
   address: z.string().min(5, 'Адрес обязателен'),
-  phone: z.string().regex(/^\+998\d{9}$/, 'Телефон должен быть в формате +998XXXXXXXXX'),
+  phone: z.string().regex(/^998\d{9}$/, 'Телефон должен быть в формате 998XXXXXXXXX'),
   status: z.enum(['active', 'inactive']),
 });
 
@@ -119,10 +118,10 @@ export function StoreForm({ initial, onSuccess, storeId }: StoreFormProps) {
                   <FormControl>
                     <PatternFormat
                       {...field}
-                      format="+998#########"
+                      format="998#########"
                       allowEmptyFormatting={true}
-                      mask="_"
-                      placeholder="+998 90 123 45 67"
+                      mask=" "
+                      placeholder="998 90 123 45 67"
                       customInput={Input}
                       disabled={isSubmitting}
                       onValueChange={values => field.onChange(values.value)}

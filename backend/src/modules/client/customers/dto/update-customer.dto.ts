@@ -12,7 +12,7 @@ import { Transform } from 'class-transformer';
 export class UpdateCustomerDto extends PartialType(CreateCustomerDto) {
   @IsString()
   @IsOptional()
-  @Matches(/^\+998\d{9}$/, { message: 'Телефон должен быть в формате +998XXXXXXXXX' })
+  @Matches(/998\d{9}$/, { message: 'Телефон должен быть в формате +998XXXXXXXXX' })
   phone?: string;
 
   @IsString()

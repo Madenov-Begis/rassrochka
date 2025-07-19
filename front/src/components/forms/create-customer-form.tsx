@@ -149,13 +149,13 @@ export function CreateOrEditCustomerForm({ onSuccess,  initialValues, editMode }
           render={({ field }) => (
             <PatternFormat 
               {...field}
-              format="+998#########"
+              format="998#########"
               allowEmptyFormatting={true}
               mask=" "
-              placeholder="+998901234567"
+              placeholder="998901234567"
               customInput={Input}
               disabled={mutation.isPending}
-              onValueChange={values => field.onChange(values.value ? `+998${values.value}` : '')}
+              onValueChange={values => field.onChange(values.value ? `998${values.value}` : '')}
             />
           )}
         />

@@ -255,9 +255,9 @@ export class ImportService {
     if (!data.address) errors.push('Адрес обязателен');
 
     // Проверка формата телефона
-    const phoneRegex = /^\+998\d{9}$/;
+    const phoneRegex = /998\d{9}$/;
     if (data.phone && data.phone.trim() !== '' && !phoneRegex.test(data.phone)) {
-      errors.push('Неверный формат телефона (должен быть +998XXXXXXXXX)');
+      errors.push('Неверный формат телефона (должен быть 998XXXXXXXXX)');
     }
 
     // Проверка уникальности паспорта
