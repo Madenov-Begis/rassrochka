@@ -4,6 +4,7 @@ import { ConfigService } from "@nestjs/config"
 import { AppModule } from "./app.module"
 import { Response } from 'express'
 import { ResponseInterceptor } from './common/interceptors/response.interceptor'
+import { setupSwaggerAdmin } from "./common/swagger"
 
 @Catch()
 class GlobalHttpExceptionFilter implements ExceptionFilter {
@@ -47,8 +48,11 @@ class GlobalHttpExceptionFilter implements ExceptionFilter {
   }
 }
 
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule)
+  const app = await NestFactory.create(AppModule, {
+    logger: false,
+  })
   const configService = app.get(ConfigService)
   const logger = new Logger("Bootstrap")
 
@@ -66,6 +70,9 @@ async function bootstrap() {
   // Глобальный интерцептор для успешных ответов
   app.useGlobalInterceptors(new ResponseInterceptor())
 
+  // Swagger
+  setupSwaggerAdmin(app)
+
   // CORS
   app.enableCors({
     origin: "*",
@@ -78,7 +85,7 @@ async function bootstrap() {
   const port = configService.get("PORT", 3000)
   await app.listen(port)
 
-  logger.log(`🚀 Application is running on: http://localhost:${port}`)
+  console.log(`🚀 Application is running on: http://localhost:${port}`)
 }
 
 bootstrap()

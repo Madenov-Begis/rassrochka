@@ -51,16 +51,17 @@ interface InstallmentRow {
   downPayment: number;
   interestRate: number;
   months: number;
+  createdAt: string;
 }
 
 @Injectable()
 export class ImportService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async importClients(file: MulterFile, storeId: number): Promise<ImportResult> {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(file.buffer);
-    
+
     const worksheet = workbook.getWorksheet(1);
     if (!worksheet) {
       throw new BadRequestException('Файл не содержит данных');
@@ -78,6 +79,9 @@ export class ImportService {
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
+      if (row.values.length == 0) {
+        continue;
+      }
       const rowNumber = i + 2; // +2 потому что начинаем со 2-й строки (после заголовка)
 
       try {
@@ -99,7 +103,7 @@ export class ImportService {
   async importInstallments(file: MulterFile, storeId: number): Promise<ImportResult> {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(file.buffer);
-    
+
     const worksheet = workbook.getWorksheet(1);
     if (!worksheet) {
       throw new BadRequestException('Файл не содержит данных');
@@ -114,9 +118,11 @@ export class ImportService {
     // Пропускаем заголовок
     const rows = worksheet.getRows(2, worksheet.rowCount - 1) || [];
     result.total = rows.length;
-
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
+      if (row.values.length == 0) {
+        continue;
+      }
       const rowNumber = i + 2;
 
       try {
@@ -125,6 +131,7 @@ export class ImportService {
         await this.createInstallment(installmentData, storeId);
         result.success++;
       } catch (error) {
+        console.log(error)
         result.errors.push({
           row: rowNumber,
           errors: Array.isArray(error.message) ? error.message : [error.message]
@@ -137,7 +144,7 @@ export class ImportService {
 
   private parseClientRow(row: ExcelJS.Row): ClientRow {
     const cells = row.values as any[];
-    
+
     return {
       firstName: this.getStringValue(cells[1]),
       lastName: this.getStringValue(cells[2]),
@@ -145,24 +152,7 @@ export class ImportService {
       passportSeries: this.getStringValue(cells[4]),
       passportNumber: this.getStringValue(cells[5]),
       phone: this.getStringValue(cells[6]),
-      address: this.getStringValue(cells[7])
-    };
-  }
-
-  private parseInstallmentRow(row: ExcelJS.Row): InstallmentRow {
-    const cells = row.values as any[];
-    
-    return {
-      customerFirstName: this.getStringValue(cells[1]),
-      customerLastName: this.getStringValue(cells[2]),
-      customerMiddleName: this.getStringValue(cells[3]) || undefined,
-      passportSeries: this.getStringValue(cells[4]),
-      passportNumber: this.getStringValue(cells[5]),
-      productName: this.getStringValue(cells[6]),
-      productPrice: this.getNumberValue(cells[7]),
-      downPayment: this.getNumberValue(cells[8]),
-      interestRate: this.getNumberValue(cells[9]),
-      months: this.getNumberValue(cells[10])
+      address: this.getStringValue(cells[7]),
     };
   }
 
@@ -188,6 +178,71 @@ export class ImportService {
     return num;
   }
 
+  private getDateValue(value: any): Date {
+    if (value === null || value === undefined) {
+      throw new Error('Поле обязательно для заполнения');
+    }
+
+    // If the value is already a Date object
+    if (value instanceof Date) {
+      if (isNaN(value.getTime())) {
+        throw new Error('Некорректная дата');
+      }
+      return value;
+    }
+
+    // If it's an Excel serial number
+    if (typeof value === 'number') {
+      const date = new Date(Math.round((value - 25569) * 86400 * 1000));
+      if (isNaN(date.getTime())) {
+        throw new Error('Некорректная дата');
+      }
+      return date;
+    }
+
+    // If it's a string, try parsing it
+    const str = String(value).trim();
+    if (!str) {
+      throw new Error('Дата не может быть пустой');
+    }
+
+    // Try parsing as ISO string or various date formats
+    const date = new Date(str);
+    if (isNaN(date.getTime())) {
+      // Try parsing DD.MM.YYYY format
+      const parts = str.split('.');
+      if (parts.length === 3) {
+        const [day, month, year] = parts.map(Number);
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+          const date = new Date(year, month - 1, day);
+          if (!isNaN(date.getTime())) {
+            return date;
+          }
+        }
+      }
+      throw new Error('Некорректный формат даты. Используйте формат DD.MM.YYYY или ISO');
+    }
+    return date;
+  }
+
+  private parseInstallmentRow(row: ExcelJS.Row): InstallmentRow {
+    const cells = row.values as any[];
+
+    return {
+      customerFirstName: this.getStringValue(cells[1]),
+      customerLastName: this.getStringValue(cells[2]),
+      customerMiddleName: this.getStringValue(cells[3]) || undefined,
+      passportSeries: this.getStringValue(cells[4]),
+      passportNumber: this.getStringValue(cells[5]),
+      productName: this.getStringValue(cells[6]),
+      productPrice: this.getNumberValue(cells[7]),
+      downPayment: this.getNumberValue(cells[8]),
+      interestRate: this.getNumberValue(cells[9]),
+      months: this.getNumberValue(cells[10]),
+      createdAt: this.getDateValue(cells[11]).toISOString()
+    };
+  }
+
   private async validateClientData(data: ClientRow, storeId: number): Promise<void> {
     const errors: string[] = [];
 
@@ -201,7 +256,7 @@ export class ImportService {
 
     // Проверка формата телефона
     const phoneRegex = /^\+998\d{9}$/;
-    if (data.phone && !phoneRegex.test(data.phone)) {
+    if (data.phone && data.phone.trim() !== '' && !phoneRegex.test(data.phone)) {
       errors.push('Неверный формат телефона (должен быть +998XXXXXXXXX)');
     }
 
@@ -237,6 +292,7 @@ export class ImportService {
     if (data.downPayment < 0) errors.push('Первоначальный взнос не может быть отрицательным');
     if (data.interestRate < 0) errors.push('Процентная ставка не может быть отрицательной');
     if (data.months <= 0) errors.push('Срок должен быть больше 0');
+    if (!data.createdAt) errors.push('Дата создания обязательна');
 
     // Проверка логики
     if (data.downPayment >= data.productPrice) {
@@ -312,7 +368,8 @@ export class ImportService {
         monthlyPayment: new Decimal(monthlyPayment),
         status: 'active',
         customerId: customer.id,
-        storeId: storeId
+        storeId: storeId,
+        createdAt: new Date(data.createdAt)
       }
     });
 
@@ -323,16 +380,25 @@ export class ImportService {
       status: PaymentStatus;
       installmentId: number;
     }> = [];
-    const today = new Date();
-    
+    const today = new Date(data.createdAt)
+
     for (let i = 1; i <= data.months; i++) {
       const dueDate = new Date(today);
       dueDate.setMonth(today.getMonth() + i);
-      
+
+      let status;
+      const currentDate = new Date()
+
+      if (dueDate < currentDate) {
+        status = PaymentStatus.overdue
+      } else {
+        status = PaymentStatus.pending
+      }
+
       payments.push({
         amount: new Decimal(monthlyPayment),
         dueDate: dueDate,
-        status: PaymentStatus.pending,
+        status,
         installmentId: installment.id
       });
     }
