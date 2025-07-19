@@ -2,7 +2,7 @@
   "name": "Qolay",
   "short_name": "Qolay",
   "description": "Система управления рассрочками для магазинов и администраторов.",
-  "start_url": ".",
+  "start_url": "https://qolay.uz/",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#2563eb",
