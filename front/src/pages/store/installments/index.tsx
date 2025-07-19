@@ -27,8 +27,6 @@ import type { PaginatedApiResponse, ApiError } from '@/types/api-response';
 import type { Installment } from '@/types/store/installments';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useNavigate } from 'react-router-dom';
-import { useStatsStore } from '@/store/stats-store';
-import { useEffect } from 'react';
 import { ImportModal } from '@/components/forms/import-modal';
 
 export default function InstallmentsPage() {
@@ -48,16 +46,6 @@ export default function InstallmentsPage() {
       installmentsApi.getAll({ search: debouncedValue, status, page }),
   });
 
-  const {
-    stats,
-    isLoading: statsLoading,
-    error: statsError,
-    fetchStats,
-  } = useStatsStore();
-
-  useEffect(() => {
-    fetchStats();
-  }, []);
 
   const getStatusBadge = (status: string) => {
     const config = {
@@ -131,8 +119,6 @@ export default function InstallmentsPage() {
         templateUrl="/docs/import-templates/installments_template.xlsx"
         endpoint="/api/client/import/installments"
       />
-
-      {statsError && <div className="text-red-600">{statsError}</div>}
 
       {/* Filters */}
       <Card>

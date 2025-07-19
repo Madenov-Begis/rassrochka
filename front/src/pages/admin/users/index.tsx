@@ -1,52 +1,58 @@
-import { useState, useEffect } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useNavigate } from "react-router-dom"
-import { adminApi } from "@/services/api"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { TableSkeleton } from "@/components/loading/table-skeleton"
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { adminApi } from '@/services/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Search, Eye, Plus, UserCheck, UserX } from "lucide-react"
-import { format } from "date-fns"
-import { ru } from "date-fns/locale"
-import { toast } from "react-toastify"
-import { Pagination } from "@/components/pagination"
-import { useDebounce } from "@/hooks/use-debounce"
-import { UserForm } from "@/components/forms/user-form"
-import type { UserFormValues } from "@/components/forms/user-form"
-import type { AdminStore } from "@/types/admin/store"
-import type { PaginatedApiResponse } from "@/types/api-response"
-import type { User } from "@/types/admin/user"
+} from '@/components/ui/dialog';
+import { Search, Eye, Plus, UserCheck, UserX } from 'lucide-react';
+import { format } from 'date-fns';
+import { ru } from 'date-fns/locale';
+import { toast } from 'react-toastify';
+import { Pagination } from '@/components/pagination';
+import { useDebounce } from '@/hooks/use-debounce';
+import { UserForm } from '@/components/forms/user-form';
+import type { UserFormValues } from '@/components/forms/user-form';
+import type { AdminStore } from '@/types/admin/store';
+import type { PaginatedApiResponse } from '@/types/api-response';
+import type { User } from '@/types/admin/user';
 
 export default function AdminUsers() {
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const [search, setSearch] = useState("")
-  const debouncedSearch = useDebounce(search, 300)
-  const [page, setPage] = useState(1)
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const limit = 10
-  const [stores, setStores] = useState<AdminStore[]>([])
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const limit = 10;
+  const [stores, setStores] = useState<AdminStore[]>([]);
 
-  const { data, isLoading, error } = useQuery<PaginatedApiResponse<User[]>>({
-    queryKey: ["admin-users", { page, limit, search: debouncedSearch }],
+  const { data } = useQuery<PaginatedApiResponse<User[]>>({
+    queryKey: ['admin-users', { page, limit, search: debouncedSearch }],
     queryFn: () => adminApi.getUsers({ page, limit, search: debouncedSearch }),
-  })
+  });
 
   useEffect(() => {
     adminApi.getStores({ limit: 1000 }).then((res) => {
-      setStores(res.data?.items || [])
-    })
-  }, [])
+      setStores(res.data?.items || []);
+    });
+  }, []);
 
   useEffect(() => {
     setPage(1);
@@ -55,175 +61,208 @@ export default function AdminUsers() {
   const createUserMutation = useMutation({
     mutationFn: adminApi.createUser,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] })
-      setIsCreateDialogOpen(false)
-      toast.success("Пользователь создан")
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setIsCreateDialogOpen(false);
+      toast.success('Пользователь создан');
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error("Не удалось создать пользователя: " + error.response?.data?.message)
+      toast.error(
+        'Не удалось создать пользователя: ' + error.response?.data?.message,
+      );
     },
-  })
+  });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => adminApi.updateUserStatus(id, status === "active"),
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      adminApi.updateUserStatus(id, status === 'active'),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] })
-      toast.success("Статус пользователя обновлен")
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast.success('Статус пользователя обновлен');
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error("Не удалось обновить статус: " + error.response?.data?.message)
+      toast.error(
+        'Не удалось обновить статус: ' + error.response?.data?.message,
+      );
     },
-  })
+  });
 
-  const users = data?.data?.items || []
-  const total = data?.data?.total || 0
+  const users = data?.data?.items || [];
+  const total = data?.data?.total || 0;
 
   const getRoleBadge = (role: string) => {
     const roleConfig = {
-      admin: { label: "Администратор", variant: "default" as const },
-      store_manager: { label: "Менеджер магазина", variant: "secondary" as const },
-    }
+      admin: { label: 'Администратор', variant: 'default' as const },
+      store_manager: {
+        label: 'Менеджер магазина',
+        variant: 'secondary' as const,
+      },
+    };
 
-    const config = roleConfig[role as keyof typeof roleConfig] || roleConfig.store_manager
-    return <Badge variant={config.variant}>{config.label}</Badge>
-  }
+    const config =
+      roleConfig[role as keyof typeof roleConfig] || roleConfig.store_manager;
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
 
   const handleCreateUser = async (values: UserFormValues) => {
     await createUserMutation.mutateAsync({
       ...values,
-      storeId: values.role === "store_manager" ? values.storeId : null,
-    })
-    setIsCreateDialogOpen(false)
-  }
+      storeId: values.role === 'store_manager' ? values.storeId : null,
+    });
+    setIsCreateDialogOpen(false);
+  };
 
-    const handleStatusToggle = (user: User) => {
-    const newStatus = user.status === "active" ? "blocked" : "active"
-    updateStatusMutation.mutate({ id: user.id.toString(), status: newStatus })
-  }
+  const handleStatusToggle = (user: User) => {
+    const newStatus = user.status === 'active' ? 'blocked' : 'active';
+    updateStatusMutation.mutate({ id: user.id.toString(), status: newStatus });
+  };
 
   return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">Пользователи</h1>
-            <p className="text-xs sm:text-sm md:text-base text-muted-foreground">Управление пользователями системы</p>
-          </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Добавить пользователя
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Создать пользователя</DialogTitle>
-              </DialogHeader>
-              <UserForm
-                initialValues={{ login: "", role: "store_manager", status: "active", storeId: "" }}
-                onSubmit={handleCreateUser}
-                mode="create"
-                loading={createUserMutation.isPending}
-                stores={stores}
-              />
-            </DialogContent>
-          </Dialog>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
+            Пользователи
+          </h1>
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
+            Управление пользователями системы
+          </p>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Поиск</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Поиск по логину..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Users Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl sm:text-2xl md:text-3xl lg:text-4xl">Список пользователей</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto -mx-2 sm:mx-0">
-              <Table className="min-w-[700px] sm:min-w-0 text-xs sm:text-sm">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="whitespace-nowrap">Логин</TableHead>
-                    <TableHead className="whitespace-nowrap">Роль</TableHead>
-                    <TableHead className="whitespace-nowrap">Статус</TableHead>
-                    <TableHead className="whitespace-nowrap">Магазин</TableHead>
-                    <TableHead className="whitespace-nowrap">Дата создания</TableHead>
-                    <TableHead className="whitespace-nowrap">Действия</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.id}</TableCell>
-                      <TableCell>{user.login}</TableCell>
-                      <TableCell>{getRoleBadge(user.role)}</TableCell>
-                      <TableCell>{stores.find((store) => store.id === user.storeId)?.name || "-"}</TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            user.status === "active"
-                              ? "bg-green-100 text-green-800"
-                              : user.status === "blocked"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-gray-100 text-gray-600"
-                          }
-                        >
-                          {user.status === "active"
-                            ? "Активен"
-                            : user.status === "blocked"
-                            ? "Заблокирован"
-                            : "Неактивен"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{format(new Date(user.createdAt), "dd MMM yyyy", { locale: ru })}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/users/${user.id}`)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleStatusToggle(user)}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            {user.status === "active" ? (
-                              <UserX className="h-4 w-4 text-red-500" />
-                            ) : (
-                              <UserCheck className="h-4 w-4 text-green-500" />
-                            )}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Pagination
-          page={page}
-          total={total}
-          limit={limit}
-          onPageChange={setPage}
-          className="flex justify-center mt-6"
-        />
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Добавить пользователя
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Создать пользователя</DialogTitle>
+            </DialogHeader>
+            <UserForm
+              initialValues={{
+                login: '',
+                role: 'store_manager',
+                status: 'active',
+                storeId: '',
+              }}
+              onSubmit={handleCreateUser}
+              mode="create"
+              loading={createUserMutation.isPending}
+              stores={stores}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
-  )
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Поиск</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Поиск по логину..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Users Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl sm:text-2xl md:text-3xl lg:text-4xl">
+            Список пользователей
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <Table className="min-w-[700px] sm:min-w-0 text-xs sm:text-sm">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="whitespace-nowrap">Логин</TableHead>
+                  <TableHead className="whitespace-nowrap">Роль</TableHead>
+                  <TableHead className="whitespace-nowrap">Статус</TableHead>
+                  <TableHead className="whitespace-nowrap">Магазин</TableHead>
+                  <TableHead className="whitespace-nowrap">
+                    Дата создания
+                  </TableHead>
+                  <TableHead className="whitespace-nowrap">Действия</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.id}</TableCell>
+                    <TableCell>{user.login}</TableCell>
+                    <TableCell>{getRoleBadge(user.role)}</TableCell>
+                    <TableCell>
+                      {stores.find((store) => store.id === user.storeId)
+                        ?.name || '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={
+                          user.status === 'active'
+                            ? 'bg-green-100 text-green-800'
+                            : user.status === 'blocked'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-gray-100 text-gray-600'
+                        }
+                      >
+                        {user.status === 'active'
+                          ? 'Активен'
+                          : user.status === 'blocked'
+                          ? 'Заблокирован'
+                          : 'Неактивен'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(user.createdAt), 'dd MMM yyyy', {
+                        locale: ru,
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/admin/users/${user.id}`)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleStatusToggle(user)}
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          {user.status === 'active' ? (
+                            <UserX className="h-4 w-4 text-red-500" />
+                          ) : (
+                            <UserCheck className="h-4 w-4 text-green-500" />
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Pagination
+        page={page}
+        total={total}
+        limit={limit}
+        onPageChange={setPage}
+        className="flex justify-center mt-6"
+      />
+    </div>
+  );
 }

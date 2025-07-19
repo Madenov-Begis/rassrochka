@@ -67,18 +67,6 @@ export default function CustomerDetailPage() {
     enabled: !!id,
   });
 
-  const { data: customerInstallments} =
-    useQuery<PaginatedApiResponse<Installment[]>, ApiError>({
-      queryKey: ['customer-installments', id, installmentsPage],
-      queryFn: () =>
-        customersApi.getInstallments(id as string, {
-          page: installmentsPage,
-          limit: installmentsLimit,
-        }),
-      enabled: !!id,
-      placeholderData: keepPreviousData,
-    });
-
   const blacklistMutation = useMutation({
     mutationFn: (isBlacklisted: boolean) =>
       customersApi.updateBlacklist(id as string, isBlacklisted),
@@ -128,20 +116,11 @@ export default function CustomerDetailPage() {
     );
   };
 
-  const totalInstallments = customerInstallments?.data?.items?.length || 0;
-  const activeInstallments =
-    customerInstallments?.data?.items?.filter(
-      (i: Installment) => i.status === 'active',
-    ).length || 0;
-  const overdueInstallments =
-    customerInstallments?.data?.items?.filter(
-      (i: Installment) => i.status === 'overdue',
-    ).length || 0;
-  const totalAmount =
-    customerInstallments?.data?.items?.reduce(
-      (sum: number, i: Installment) => sum + Number(i.totalAmount),
-      0,
-    ) || 0;
+  const installments = customer.data?.installments || [];
+  const totalInstallments = installments.length;
+  const activeInstallments = installments.filter((i: Installment) => i.status === 'active').length;
+  const overdueInstallments = installments.filter((i: Installment) => i.status === 'overdue').length;
+  const totalAmount = installments.reduce((sum: number, i: Installment) => sum + Number(i.totalAmount), 0);
 
   return (
     <div className="space-y-6">
@@ -412,7 +391,7 @@ export default function CustomerDetailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {customerInstallments?.data?.items?.map((installment) => (
+                    {installments.map((installment) => (
                       <TableRow key={installment.id}>
                         <TableCell className="font-medium">
                           {installment.productName}
@@ -456,13 +435,6 @@ export default function CustomerDetailPage() {
                     ))}
                   </TableBody>
                 </Table>
-                <ServerPagination
-                  page={customerInstallments?.data?.page || 1}
-                  total={customerInstallments?.data?.total || 0}
-                  limit={installmentsLimit}
-                  onPageChange={setInstallmentsPage}
-                  className="flex justify-center mt-6"
-                />
               </div>
             </CardContent>
           </Card>
@@ -487,7 +459,7 @@ export default function CustomerDetailPage() {
                   </div>
                 </div>
 
-                {customerInstallments?.data?.items?.map(
+                {installments.map(
                   (installment: Installment) => (
                     <div
                       key={installment.id}

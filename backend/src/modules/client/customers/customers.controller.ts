@@ -62,14 +62,4 @@ export class CustomersController {
   ) {
     return this.customersService.update(req.user.storeId, id, updateCustomerDto)
   }
-
-  @Get(":id/installments")
-  findCustomerInstallments(
-    @CurrentUser() user: any,
-    @Param('id') id: number,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
-  ) {
-    return this.installmentsService.findByCustomer(user.storeId, id, page, limit)
-  }
 }

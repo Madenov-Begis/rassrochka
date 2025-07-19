@@ -142,10 +142,18 @@ export default function StoreDetailPage() {
           </p>
         </div>
         {getStatusBadge(store.data?.status || '')}
-        <Button variant="outline" size="sm" onClick={() => setImportClientsOpen(true)}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setImportClientsOpen(true)}
+        >
           Импорт клиентов
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setImportInstallmentsOpen(true)}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setImportInstallmentsOpen(true)}
+        >
           Импорт рассрочек
         </Button>
       </div>
@@ -264,10 +272,7 @@ export default function StoreDetailPage() {
                         name: store.data?.name,
                         address: store.data?.address,
                         phone: store.data?.phone,
-                        status: store.data?.status as
-                          | 'active'
-                          | 'payment_overdue'
-                          | 'blocked',
+                        status: store.data?.status as 'active' | 'inactive',
                       }}
                       onSuccess={() => {
                         setEditOpen(false);

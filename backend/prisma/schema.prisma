@@ -88,6 +88,7 @@ model Payment {
   updatedAt     DateTime      @updatedAt
   installment   Installment   @relation(fields: [installmentId], references: [id])
   paymentHistory PaymentHistory[]
+  type          PaymentType   @default(ordinary)
 
   @@map("payments")
 }
@@ -128,4 +129,9 @@ enum UserStatus {
   active
   inactive
   blocked
+}
+
+enum PaymentType {
+  ordinary
+  early_payoff
 }

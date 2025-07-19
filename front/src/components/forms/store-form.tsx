@@ -30,7 +30,7 @@ const storeSchema = z.object({
   name: z.string().min(2, 'Название обязательно'),
   address: z.string().min(5, 'Адрес обязателен'),
   phone: z.string().regex(/^\+998\d{9}$/, 'Телефон должен быть в формате +998XXXXXXXXX'),
-  status: z.enum(['active', 'payment_overdue', 'blocked']),
+  status: z.enum(['active', 'inactive']),
 });
 
 type StoreFormValues = z.infer<typeof storeSchema>;

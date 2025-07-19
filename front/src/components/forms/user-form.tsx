@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { z } from "zod";
-import type { Store } from "@/types/admin/store";
+import type { AdminStore } from "@/types/admin/store";
 
 const userSchema = z.object({
   login: z.string().min(1, "Логин обязателен"),
@@ -26,7 +26,7 @@ interface UserFormProps {
   onSubmit: (values: UserFormValues) => void | Promise<void>;
   mode: "create" | "edit";
   loading?: boolean;
-  stores: Store[];
+  stores: AdminStore[];
 }
 
 export const UserForm: React.FC<UserFormProps> = ({ initialValues, onSubmit, mode, loading, stores }) => {

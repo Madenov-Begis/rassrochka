@@ -6,7 +6,14 @@
  */
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '../ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from '../ui/dialog';
 import { StoreForm } from './store-form';
 
 interface StoreModalProps {
@@ -18,30 +25,35 @@ interface StoreModalProps {
     name?: string;
     address?: string;
     phone?: string;
-    status?: string;
+    status?: 'active' | 'inactive';
   };
   trigger?: React.ReactNode;
 }
 
-export function StoreModal({ open, onOpenChange, onSuccess, storeId, initial, trigger }: StoreModalProps) {
+export function StoreModal({
+  open,
+  onOpenChange,
+  onSuccess,
+  storeId,
+  initial,
+  trigger,
+}: StoreModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{storeId ? 'Редактировать магазин' : 'Добавить магазин'}</DialogTitle>
+          <DialogTitle>
+            {storeId ? 'Редактировать магазин' : 'Добавить магазин'}
+          </DialogTitle>
           <DialogDescription>
             {storeId
               ? 'Измените данные магазина и сохраните изменения.'
               : 'Заполните все поля для добавления нового магазина.'}
           </DialogDescription>
         </DialogHeader>
-        <StoreForm
-          storeId={storeId}
-          initial={initial}
-          onSuccess={onSuccess}
-        />
+        <StoreForm storeId={storeId} initial={initial} onSuccess={onSuccess} />
       </DialogContent>
     </Dialog>
   );
-} 
+}

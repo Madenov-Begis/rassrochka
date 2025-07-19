@@ -16,14 +16,11 @@ import {
   CheckCircle, 
   Clock, 
   AlertTriangle, 
-  DollarSign,
   Calendar,
   Filter,
   Eye,
   Plus,
   Search,
-  TrendingUp,
-  TrendingDown,
   Users
 } from 'lucide-react';
 import {
@@ -72,13 +69,13 @@ export default function StorePayments() {
   const payments = data?.data?.items || [];
 
   // Статистика
-  const stats = {
-    total: payments.length,
-    totalAmount: payments.reduce((sum, p) => sum + Number(p.amount), 0),
-    pending: payments.filter(p => p.status === 'pending').length,
-    paid: payments.filter(p => p.status === 'paid').length,
-    overdue: payments.filter(p => p.status === 'overdue').length,
-  };
+  // const stats = {
+  //   total: payments.length,
+  //   totalAmount: payments.reduce((sum, p) => sum + Number(p.amount), 0),
+  //   pending: payments.filter(p => p.status === 'pending').length,
+  //   paid: payments.filter(p => p.status === 'paid').length,
+  //   overdue: payments.filter(p => p.status === 'overdue').length,
+  // };
 
   const getStatusBadge = (status: string) => {
     const config = {

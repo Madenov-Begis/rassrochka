@@ -95,16 +95,6 @@ export default function LoginPage() {
             </form>
           </CardContent>
         </Card>
-
-        <div className="text-center text-xs sm:text-sm text-gray-600">
-          <p>Демо-аккаунты:</p>
-          <p>
-            <strong>Администратор:</strong> admin / admin123
-          </p>
-          <p>
-            <strong>Менеджер:</strong> manager / manager123
-          </p>
-        </div>
       </div>
     </div>
   )

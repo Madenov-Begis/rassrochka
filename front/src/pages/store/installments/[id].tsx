@@ -135,6 +135,14 @@ export default function InstallmentDetailPage() {
       ?.filter((p: Payment) => p.status === 'pending' || p.status === 'overdue')
       .reduce((sum, p) => sum + Number(p.amount), 0) || 0;
 
+  // Сумма всех оплат по paymentHistory (включая проценты)
+  const allPaymentHistory =
+    payments?.data?.flatMap((p: Payment) => p.paymentHistory || []) || [];
+  const totalPaid = allPaymentHistory.reduce(
+    (sum, h) => sum + Number(h.amount),
+    0,
+  );
+
   const handlePay = async () => {
     if (!payModal.paymentId || !payAmount) return;
     const amount = Number(payAmount);
@@ -172,14 +180,10 @@ export default function InstallmentDetailPage() {
   const base =
     Number(installment?.data?.productPrice) -
     Number(installment?.data?.downPayment);
-  // Сумма всех оплат по paymentHistory
-  const allPaymentHistory =
-    payments?.data?.flatMap((p: Payment) => p.paymentHistory || []) || [];
-  const totalPaid = allPaymentHistory.reduce(
-    (sum, h) => sum + Number(h.amount),
-    0,
-  );
-  const remainingBase = Math.max(0, base - totalPaid);
+  const months = Number(installment?.data?.months) || 1;
+  const principalPerMonth = base / months;
+  const paidCount = payments?.data?.filter((p: Payment) => p.status === 'paid').length || 0;
+  const remainingBase = Math.max(0, base - paidCount * principalPerMonth);
 
   return (
     <div className="space-y-6">
@@ -378,7 +382,7 @@ export default function InstallmentDetailPage() {
             <div className="flex justify-between border-t pt-2">
               <span className="text-sm font-medium">Общая сумма:</span>
               <span className="font-bold">
-                {Number(installment?.data?.totalAmount ?? 0).toLocaleString(
+                {(earlyPayoffMutation.data?.newTotalAmount ?? installment?.data?.totalAmount ?? 0).toLocaleString(
                   'ru-RU',
                   { maximumFractionDigits: 0 },
                 )}{' '}

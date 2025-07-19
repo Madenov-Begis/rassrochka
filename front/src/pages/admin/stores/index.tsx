@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useQuery } from "@tanstack/react-query"
 import { adminApi } from "@/services/api"
 import { useNavigate } from "react-router-dom"
-import { TableSkeleton } from "@/components/loading/table-skeleton"
 import { StoreModal } from '../../../components/forms/store-modal';
 import { toast } from 'react-toastify';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -45,18 +44,16 @@ export default function AdminStoresPage() {
     },
   });
 
-  const { data: storesData, isLoading } = useQuery<PaginatedApiResponse<AdminStore[]>, ApiError>({
+  const { data: storesData } = useQuery<PaginatedApiResponse<AdminStore[]>, ApiError>({
     queryKey: ["admin-stores", { search: debouncedSearch, page }],
     queryFn: () => adminApi.getStores({ search: debouncedSearch, page, limit: 10 }),
   })
-
 
   const stores = storesData?.data?.items || [];
   const totalStores = storesData?.data?.total || 0;
   const limit = 10;
   const activeStores = stores.filter((store) => store.status === "active").length;
-  const overdueStores = stores.filter((store) => store.status === "payment_overdue").length;
-  const blockedStores = stores.filter((store) => store.status === "blocked").length;
+  const overdueStores = stores.filter((store) => store.status === "active").length;
 
   useEffect(() => {
     setPage(1);
@@ -133,7 +130,7 @@ export default function AdminStoresPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          {/* <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Заблокированные</CardTitle>
               <Settings className="h-4 w-4 text-muted-foreground" />
@@ -142,7 +139,7 @@ export default function AdminStoresPage() {
               <div className="text-2xl font-bold">{blockedStores}</div>
               <p className="text-xs text-muted-foreground text-red-600">Критично</p>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
 
         {/* Search */}

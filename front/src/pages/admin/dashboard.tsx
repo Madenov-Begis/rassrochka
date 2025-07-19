@@ -183,7 +183,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {topStores?.data.map((store: TopStore, index: number) => (
+                  {topStores?.data.map((store: TopStore,) => (
                     <TableRow key={store.id}>
                       <TableCell className="font-medium">{store.name}</TableCell>
                       <TableCell>{store.revenue.toLocaleString('ru-RU', {
@@ -191,7 +191,7 @@ export default function AdminDashboard() {
                       })} UZS</TableCell>
                       <TableCell>{store.installments}</TableCell>
                       <TableCell>
-                        <Badge variant="success">Активен</Badge>
+                        <Badge variant="default">Активен</Badge>
                       </TableCell>
                     </TableRow>
                   ))}

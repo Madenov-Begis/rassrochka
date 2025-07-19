@@ -20,11 +20,16 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { installmentsApi, paymentsApi } from '@/services/api';
 import { DashboardSkeleton } from '@/components/loading/dashboard-skeleton';
+import type { StoreChats } from '@/types/store/dashboard';
+import type { ApiError, ApiResponse } from '@/types/api-response';
 
 export default function StoreDashboard() {
   const navigate = useNavigate();
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const {
+    data: stats,
+    isLoading: statsLoading,
+  } = useQuery<ApiResponse<StoreChats>, ApiError>({
     queryKey: ['store-stats'],
     queryFn: () => installmentsApi.getStats(),
   });
@@ -48,8 +53,12 @@ export default function StoreDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold">Дашборд магазина</h1>
-          <p className="text-xs sm:text-sm md:text-base text-gray-600">Краткая статистика и быстрые действия</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold">
+            Дашборд магазина
+          </h1>
+          <p className="text-xs sm:text-sm md:text-base text-gray-600">
+            Краткая статистика и быстрые действия
+          </p>
         </div>
       </div>
 
@@ -58,12 +67,18 @@ export default function StoreDashboard() {
         {/* Рассрочки */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Всего рассрочек</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Всего рассрочек
+            </CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.data?.totalInstallments || 0}</div>
-            <p className="text-xs text-muted-foreground">+{stats?.data?.newThisMonth || 0} за этот месяц</p>
+            <div className="text-2xl font-bold">
+              {stats?.data?.totalInstallments || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              +{stats?.data?.newThisMonth || 0} за этот месяц
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -72,8 +87,15 @@ export default function StoreDashboard() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats?.data?.activeInstallments || 0}</div>
-            <p className="text-xs text-muted-foreground">{(stats?.data?.activeInstallments / stats?.data?.totalInstallments) * 100 || 0}% от общего числа</p>
+            <div className="text-2xl font-bold text-green-600">
+              {stats?.data?.activeInstallments || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {(Number(stats?.data?.activeInstallments) /
+                Number(stats?.data?.totalInstallments)) *
+                100 || 0}
+              % от общего числа
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -82,39 +104,63 @@ export default function StoreDashboard() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats?.data?.overdueInstallments || 0}</div>
-            <p className="text-xs text-muted-foreground text-red-600">Требует внимания</p>
+            <div className="text-2xl font-bold text-red-600">
+              {stats?.data?.overdueInstallments || 0}
+            </div>
+            <p className="text-xs text-muted-foreground text-red-600">
+              Требует внимания
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Оборот за месяц</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Оборот за месяц
+            </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{(stats?.data?.monthlyRevenue || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 })} UZS</div>
-            <p className="text-xs text-muted-foreground"><TrendingUp className="h-3 w-3 inline mr-1" />+{stats?.data?.revenueGrowth || 0}% к прошлому месяцу</p>
+            <div className="text-2xl font-bold">
+              {(stats?.data?.monthlyRevenue || 0).toLocaleString('ru-RU', {
+                maximumFractionDigits: 0,
+              })}{' '}
+              UZS
+            </div>
+            <p className="text-xs text-muted-foreground">
+              <TrendingUp className="h-3 w-3 inline mr-1" />+
+              {stats?.data?.revenueGrowth || 0}% к прошлому месяцу
+            </p>
           </CardContent>
         </Card>
         {/* Клиенты */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Всего клиентов</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Всего клиентов
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.data?.totalCustomers || 0}</div>
+            <div className="text-2xl font-bold">
+              {stats?.data?.totalCustomers || 0}
+            </div>
             <p className="text-xs text-muted-foreground">Клиентов в системе</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Активные клиенты</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Активные клиенты
+            </CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats?.data?.activeCustomers || 0}</div>
-            <p className="text-xs text-muted-foreground">Без просрочек и не в чёрном списке</p>
+            <div className="text-2xl font-bold text-green-600">
+              {stats?.data?.activeCustomers || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Без просрочек и не в чёрном списке
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -123,17 +169,25 @@ export default function StoreDashboard() {
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats?.data?.overdueCustomers || 0}</div>
-            <p className="text-xs text-muted-foreground">Есть просроченные рассрочки</p>
+            <div className="text-2xl font-bold text-yellow-600">
+              {stats?.data?.overdueCustomers || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Есть просроченные рассрочки
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">В чёрном списке</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              В чёрном списке
+            </CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats?.data?.blacklistedCustomers || 0}</div>
+            <div className="text-2xl font-bold text-red-600">
+              {stats?.data?.blacklistedCustomers || 0}
+            </div>
             <p className="text-xs text-muted-foreground">Заблокированы</p>
           </CardContent>
         </Card>
@@ -162,9 +216,7 @@ export default function StoreDashboard() {
                   <TableHead>Статус</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
-                
-              </TableBody>
+              <TableBody></TableBody>
             </Table>
           </CardContent>
         </Card>
@@ -185,7 +237,17 @@ export default function StoreDashboard() {
             <div className="space-y-3">
               {upcomingPayments?.data?.items
                 ?.slice(0, 5)
-                .map((payment: any) => (
+                .map((payment: {
+                  id: string;
+                  amount: number | string;
+                  dueDate: string;
+                  installment: {
+                    customer: {
+                      firstName: string;
+                      lastName: string;
+                    };
+                  };
+                }) => (
                   <div
                     key={payment.id}
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
@@ -239,7 +301,18 @@ export default function StoreDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {overduePayments?.data?.items?.slice(0, 3).map((payment: any) => (
+              {Array.isArray(overduePayments?.data?.items) && overduePayments.data.items.slice(0, 3).map((payment: {
+                id: string;
+                amount: number | string;
+                dueDate: string;
+                installment: {
+                  customer: {
+                    firstName: string;
+                    lastName: string;
+                    phone: string;
+                  };
+                };
+              }) => (
                 <div
                   key={payment.id}
                   className="flex items-center justify-between p-2 bg-white rounded"
@@ -285,7 +358,6 @@ export default function StoreDashboard() {
           </CardContent>
         </Card>
       )}
-
     </div>
   );
 }

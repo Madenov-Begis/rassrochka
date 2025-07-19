@@ -20,12 +20,11 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { paymentsApi, installmentsApi } from '@/services/api';
+import { paymentsApi } from '@/services/api';
 import { DashboardSkeleton } from '@/components/loading/dashboard-skeleton';
 import { toast } from 'react-toastify';
 import type { ApiError, ApiResponse } from '@/types/api-response';
-import type { Payment } from '@/types/store/payments';
-import type { Installment } from '@/types/store/installments';
+import type { PaymentDetail } from '@/types/admin/store';
 
 export default function PaymentDetailPage() {
   const { id } = useParams();
@@ -33,7 +32,7 @@ export default function PaymentDetailPage() {
   const queryClient = useQueryClient();
   const [isMarkPaidOpen, setIsMarkPaidOpen] = useState(false);
 
-  const { data: payment, isLoading } = useQuery<ApiResponse<Payment>, ApiError>(
+  const { data: payment, isLoading } = useQuery<ApiResponse<PaymentDetail>, ApiError>(
     {
       queryKey: ['payment', id],
       queryFn: () => paymentsApi.getOne(id as string),
@@ -41,15 +40,16 @@ export default function PaymentDetailPage() {
     },
   );
 
-  const { data: installment } = useQuery<ApiResponse<Installment>, ApiError>({
-    queryKey: ['installment', payment?.data?.installmentId],
-    queryFn: () =>
-      installmentsApi.getOne(payment?.data?.installmentId.toString() ?? ''),
-    enabled: !!payment?.data?.installmentId,
-  });
+  // Удаляем второй запрос к installmentsApi.getOne
+  // const { data: installment } = useQuery<ApiResponse<Installment>, ApiError>({ ... });
+
+  // Теперь installment и customer доступны из payment.data.installment
+  const installment = payment?.data?.installment;
+  const customer = installment?.customer;
 
   const markPaidMutation = useMutation({
-    mutationFn: paymentsApi.markPaid,
+    mutationFn: ({ paymentId, amount }: { paymentId: string; amount: number }) =>
+      paymentsApi.markPaid(paymentId, amount),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payment', id] });
       queryClient.invalidateQueries({
@@ -196,35 +196,20 @@ export default function PaymentDetailPage() {
             <CardContent className="space-y-4">
               <div>
                 <p className="font-medium">
-                  {installment.data?.customer.lastName}{' '}
-                  {installment.data?.customer.firstName}
+                  {customer?.lastName} {customer?.firstName}
                 </p>
-                <p className="text-sm text-gray-600">ФИО</p>
-              </div>
-
-              <div>
-                <p className="font-medium">
-                  {installment.data?.customer.phone}
+                <p className="text-sm text-gray-600">
+                  {customer?.phone}
                 </p>
-                <p className="text-sm text-gray-600">Телефон</p>
               </div>
-
-              <div>
-                <p className="font-medium">
-                  {installment.data?.customer.address}
-                </p>
-                <p className="text-sm text-gray-600">Адрес</p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/store/customers/${customer?.id}`)}
+                >
+                  Профиль клиента
+                </Button>
               </div>
-
-              <Button
-                variant="outline"
-                className="w-full bg-transparent"
-                onClick={() =>
-                  navigate(`/store/customers/${installment.data?.customer?.id}`)
-                }
-              >
-                Профиль клиента
-              </Button>
             </CardContent>
           </Card>
         )}
@@ -238,14 +223,14 @@ export default function PaymentDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="font-medium">{installment.data?.productName}</p>
+                <p className="font-medium">{installment?.productName}</p>
                 <p className="text-sm text-gray-600">Товар</p>
               </div>
 
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Общая сумма:</span>
                 <span className="font-medium">
-                  {Number(installment.data?.totalAmount).toLocaleString(
+                  {Number(installment?.totalAmount ?? 0).toLocaleString(
                     'ru-RU',
                     { maximumFractionDigits: 0 },
                   )}{' '}
@@ -256,7 +241,7 @@ export default function PaymentDetailPage() {
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Ежемесячно:</span>
                 <span className="font-medium">
-                  {Number(installment.data?.monthlyPayment).toLocaleString(
+                  {Number(installment?.monthlyPayment ?? 0).toLocaleString(
                     'ru-RU',
                     { maximumFractionDigits: 0 },
                   )}{' '}
@@ -267,7 +252,7 @@ export default function PaymentDetailPage() {
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Срок:</span>
                 <span className="font-medium">
-                  {installment.data?.months} мес.
+                  {installment?.months} мес.
                 </span>
               </div>
 
@@ -275,7 +260,7 @@ export default function PaymentDetailPage() {
                 variant="outline"
                 className="w-full bg-transparent"
                 onClick={() =>
-                  navigate(`/store/installments/${installment.data?.id}`)
+                  navigate(`/store/installments/${installment?.id}`)
                 }
               >
                 Детали рассрочки
@@ -338,7 +323,10 @@ export default function PaymentDetailPage() {
                       </Button>
                       <Button
                         onClick={() =>
-                          markPaidMutation.mutate(payment.data?.id.toString() ?? '')
+                          markPaidMutation.mutate({
+                            paymentId: payment.data?.id.toString() ?? '',
+                            amount: Number(payment.data?.amount),
+                          })
                         }
                         disabled={markPaidMutation.isPending}
                       >
@@ -354,7 +342,7 @@ export default function PaymentDetailPage() {
               {installment?.customer && (
                 <Button variant="outline">
                   <a
-                    href={`tel:${installment.data?.customer.phone}`}
+                    href={`tel:${customer?.phone}`}
                     className="flex items-center"
                   >
                     Позвонить клиенту
@@ -378,7 +366,7 @@ export default function PaymentDetailPage() {
               <div className="flex-1">
                 <p className="font-medium">Платеж создан</p>
                 <p className="text-sm text-gray-600">
-                  {new Date(payment.data?.createdAt).toLocaleString()}
+                  {payment.data?.createdAt ? new Date(payment.data.createdAt).toLocaleString() : ''}
                 </p>
               </div>
             </div>
@@ -403,7 +391,7 @@ export default function PaymentDetailPage() {
                   <p className="font-medium">Платеж просрочен</p>
                   <p className="text-sm text-gray-600">
                     Просрочка с{' '}
-                    {new Date(payment.data?.dueDate).toLocaleDateString()}
+                    {payment.data?.dueDate ? new Date(payment.data.dueDate).toLocaleDateString() : ''}
                   </p>
                 </div>
                 <AlertTriangle className="h-5 w-5 text-red-500" />

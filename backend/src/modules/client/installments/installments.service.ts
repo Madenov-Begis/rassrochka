@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common"
 import { PrismaService } from "../../../prisma/prisma.service"
 import { CreateInstallmentDto } from "./dto/create-installment.dto"
-import { Decimal } from "@prisma/client/runtime/library"
+import { Prisma } from "@prisma/client"
 
 @Injectable()
 export class InstallmentsService {
@@ -31,8 +31,8 @@ export class InstallmentsService {
       data: {
         ...createInstallmentDto,
         customerId: Number(customerId),
-        totalAmount: new Decimal(totalAmount),
-        monthlyPayment: new Decimal(monthlyPayment),
+        totalAmount: new Prisma.Decimal(totalAmount),
+        monthlyPayment: new Prisma.Decimal(monthlyPayment),
         storeId,
       },
       include: {
@@ -49,7 +49,7 @@ export class InstallmentsService {
       dueDate.setMonth(dueDate.getMonth() + i + 1)
 
       payments.push({
-        amount: new Decimal(monthlyPayment),
+        amount: new Prisma.Decimal(monthlyPayment),
         dueDate,
         installmentId: installment.id,
       })
@@ -138,39 +138,61 @@ export class InstallmentsService {
       throw new Error('Сначала оплатите все просроченные платежи')
     }
 
+    // Найти все неоплаченные платежи
+    const pendingPayments = installment.payments.filter(p => p.status === 'pending')
+    const now = new Date()
+    // Проверка: если есть просроченные pending (по дате)
+    const hasLatePending = pendingPayments.some(p => new Date(p.dueDate) < now)
+    if (hasLatePending) {
+      throw new Error('Нельзя досрочно погасить рассрочку с просроченными платежами')
+    }
+
     // Основной долг
     const base = Number(installment.productPrice) - Number(installment.downPayment)
-    // Сумма всех оплат по рассрочке (по всей истории оплат)
-    const allPaymentHistory = await this.prisma.paymentHistory.findMany({
-      where: {
-        payment: { installmentId: id },
-      },
-    })
-    const totalPaid = allPaymentHistory.reduce((sum, h) => sum + Number(h.amount), 0)
-    const remainingBase = Math.max(0, base - totalPaid)
+    const months = Number(installment.months)
+    const principalPerMonth = base / months
+    // Сколько месяцев уже оплачено (по основному долгу)
+    const paidCount = installment.payments.filter(p => p.status === 'paid').length
+    let remainingAmount = base - paidCount * principalPerMonth
+    if (remainingAmount < 0) remainingAmount = 0
+
+    // Сумма всех оплаченных платежей
+    const paidPayments = installment.payments.filter(p => p.status === 'paid');
+    const paidSum = paidPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+    // Новая общая сумма рассрочки: оплачено + сумма к досрочному погашению
+    const newTotalAmount = paidSum + remainingAmount;
 
     // Отменяем все неоплаченные платежи
-    await this.prisma.payment.updateMany({
-      where: {
-        installmentId: id,
-        status: "pending",
-      },
+    const pendingIds = pendingPayments.map(p => p.id)
+    if (pendingIds.length > 0) {
+      await this.prisma.payment.updateMany({
+        where: { id: { in: pendingIds } },
+        data: { status: "cancelled" },
+      })
+    }
+
+    // Создаём платёж досрочного погашения
+    await this.prisma.payment.create({
       data: {
-        status: "cancelled",
+        amount: new Prisma.Decimal(remainingAmount),
+        dueDate: now,
+        paidDate: now,
+        status: "paid",
+        type: "early_payoff",
+        installmentId: id,
       },
     })
 
-    // Обновляем статус рассрочки
+    // Обновляем статус и сумму рассрочки
     await this.prisma.installment.update({
       where: { id },
-      data: {
-        status: "early_payoff",
-      },
+      data: { status: "early_payoff", totalAmount: newTotalAmount },
     })
 
     return {
-      remainingAmount: remainingBase,
-      message: "Installment marked for early payoff",
+      remainingAmount,
+      message: "Installment can be closed early by paying only the principal for the remaining months (без процентов)",
+      newTotalAmount,
     }
   }
 
@@ -182,31 +204,5 @@ export class InstallmentsService {
       orderBy: { dueDate: "asc" },
       include: { paymentHistory: true },
     })
-  }
-
-  async findByCustomer(storeId: number, customerId: number, page = 1, limit = 10) {
-    page = Number(page)
-    limit = Number(limit)
-    const where = { storeId, customerId }
-    const [installments, total] = await Promise.all([
-      this.prisma.installment.findMany({
-        where,
-        include: {
-          customer: true,
-          payments: true,
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-      }),
-      this.prisma.installment.count({ where }),
-    ])
-    return {
-      data: installments,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    }
   }
 }

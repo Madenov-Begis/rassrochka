@@ -4,7 +4,7 @@ import type { ApiResponse, PaginatedApiResponse, ResponseWithMessage } from '../
 import type { Customer, CustomerBody, CustomerList, GlobalSearchPassport } from "@/types/store/customers"
 import type { Installment } from "@/types/store/installments"
 import type { Payment } from "@/types/store/payments"
-import type { AdminStore } from "@/types/admin/store"
+import type { AdminStore, PaymentDetail } from "@/types/admin/store"
 import type { User } from "@/types/admin/user"
 import type { Systemalerts } from "@/types/admin/dashboard"
 import type { StoreChats } from "@/types/store/dashboard"
@@ -116,7 +116,7 @@ export const installmentsApi = {
 export const paymentsApi = {
   getAll: (params?: Record<string, string | number>) =>
     api.get<PaginatedApiResponse<Payment[]>>("api/client/payments", { params }).then((r) => r.data),
-  getOne: (id: string) => api.get<ApiResponse<Payment>>(`api/client/payments/${id}`).then((r) => r.data),
+  getOne: (id: string) => api.get<ApiResponse<PaymentDetail>>(`api/client/payments/${id}`).then((r) => r.data),
   getByInstallment: (installmentId: string) =>
     api.get(`api/client/installments/${installmentId}/payments`).then((r) => r.data),
   markPaid: (paymentId: string, amount: number) =>
