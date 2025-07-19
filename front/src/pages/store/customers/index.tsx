@@ -122,7 +122,7 @@ export default function CustomersPage() {
         open={isImportOpen}
         onOpenChange={setIsImportOpen}
         type="clients"
-        templateUrl="/docs/import-templates/clients_template.xlsx"
+        templateUrl="/public/Шаблон для клиентов.xlsx"
         endpoint="/api/client/import/clients"
       />
 

@@ -116,7 +116,7 @@ export default function InstallmentsPage() {
         open={isImportOpen}
         onOpenChange={setIsImportOpen}
         type="installments"
-        templateUrl="/docs/import-templates/installments_template.xlsx"
+        templateUrl="/public/Шаблон для рассрочек.xlsx"
         endpoint="/api/client/import/installments"
       />
 
