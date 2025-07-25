@@ -1,3 +1,4 @@
+// schema.prisma: Схема БД для системы рассрочки. Добавлено поле managerId в Installment для связи с менеджером магазина. User, Installment. 2024-07-17
 generator client {
   provider = "prisma-client-js"
 }
@@ -17,6 +18,7 @@ model User {
   updatedAt DateTime @updatedAt
   store     Store?   @relation(fields: [storeId], references: [id])
   status    UserStatus @default(active)
+  installments Installment[]
 
   @@map("users")
 }
@@ -68,10 +70,12 @@ model Installment {
   status         InstallmentStatus @default(active)
   customerId     Int
   storeId        Int
+  managerId      Int?
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   customer       Customer          @relation(fields: [customerId], references: [id])
   store          Store             @relation(fields: [storeId], references: [id])
+  manager        User?             @relation(fields: [managerId], references: [id])
   payments       Payment[]
 
   @@map("installments")

@@ -17,7 +17,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { installmentsApi, customersApi } from '@/services/api';
 import type { CustomerList } from '@/types/store/customers';
 import type { ApiResponse, ApiError } from '@/types/api-response';
-import type { InstallmentBody } from '@/types/store/installments';
+import type { InstallmentBody, StoreManager } from '@/types/store/installments';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { InputAmount } from '@/components/ui/input-amount';
@@ -52,6 +52,7 @@ export function CreateInstallmentForm({
         .min(1, 'Срок должен быть не менее 1 месяца')
         .max(120, 'Срок не может превышать 120 месяцев'),
       customerId: z.number(),
+      managerId: z.number().optional(),
     })
     .refine((data) => data.productPrice > data.downPayment, {
       message: 'Стоимость товара должна быть больше первоначального взноса',
@@ -78,7 +79,13 @@ export function CreateInstallmentForm({
       interestRate: undefined,
       months: undefined,
       customerId: undefined,
+      managerId: undefined,
     },
+  });
+
+  const { data: managers } = useQuery<ApiResponse<StoreManager[]>, ApiError>({
+    queryKey: ['store-managers'],
+    queryFn: installmentsApi.getStoreUsers,
   });
 
   const { data: customers } = useQuery<ApiResponse<CustomerList[]>, ApiError>({
@@ -137,6 +144,7 @@ export function CreateInstallmentForm({
         interestRate: Number(data.interestRate),
         months: Number(data.months),
         customerId: data.customerId.toString(),
+        managerId: data.managerId,
       },
       {
         onSuccess: () => {
@@ -270,6 +278,28 @@ export function CreateInstallmentForm({
               {errors.months && (
                 <p className="text-sm text-red-600">
                   {errors.months.message as string}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="managerId">Менеджер *</Label>
+              <Select
+                onValueChange={(value) => setValue('managerId', Number(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Выберите менеджера" />
+                </SelectTrigger>
+                <SelectContent>
+                  {managers?.data?.map((manager) => (
+                    <SelectItem key={manager.id} value={manager.id.toString()}>
+                      {manager.login}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.managerId && (
+                <p className="text-sm text-red-600">
+                  {errors.managerId.message as string}
                 </p>
               )}
             </div>

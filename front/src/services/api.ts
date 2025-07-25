@@ -11,7 +11,7 @@ import type {
   CustomerList,
   GlobalSearchPassport,
 } from '@/types/store/customers';
-import type { Installment } from '@/types/store/installments';
+import type { Installment, StoreManager } from '@/types/store/installments';
 import type { Payment } from '@/types/store/payments';
 import type { AdminStore, PaymentDetail } from '@/types/admin/store';
 import type { AdminUser, UserBody } from '@/types/admin/user';
@@ -78,8 +78,8 @@ export const adminApi = {
     api.put(`api/admin/stores/${id}/status`, { status }).then((r) => r.data),
   getStoreStats: (id: string) =>
     api.get(`api/admin/stores/${id}/stats`).then((r) => r.data),
-  getStoreUsers: (id: string) =>
-    api.get(`api/admin/stores/${id}/users`).then((r) => r.data),
+  getStoreUsers: () =>
+    api.get(`api/admin/users/store-managers`).then((r) => r.data),
   getStoreInstallments: (id: string) =>
     api.get(`api/admin/stores/${id}/installments`).then((r) => r.data),
 
@@ -170,6 +170,8 @@ export const installmentsApi = {
     api.put(`api/client/installments/${id}/pay-off-early`).then((r) => r.data),
   getStats: () =>
     api.get<ApiResponse<StoreChats>>('api/client/stats').then((r) => r.data),
+  getStoreUsers: () =>
+    api.get<ApiResponse<StoreManager[]>>(`api/client/users/store-managers`).then((r) => r.data),
 };
 
 export const paymentsApi = {

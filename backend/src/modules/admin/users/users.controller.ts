@@ -4,14 +4,18 @@ import { CreateUserDto } from "./dto/create-user.dto"
 import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guard"
 import { RolesGuard } from "../../auth/guards/roles.guard"
 import { Roles } from "../../auth/decorators/roles.decorator"
+import { CurrentUser } from "../../auth/decorators/current-user.decorator"
+import { ApiTags, ApiOperation, ApiQuery } from "@nestjs/swagger"
 
 @Controller("admin/users")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles("admin")
+@ApiTags('Admin - Users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Получить список пользователей с пагинацией' })
   async findAll(
     @Query('search') search?: string,
     @Query('page') page: number = 1,

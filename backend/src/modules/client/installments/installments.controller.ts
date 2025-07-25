@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Param, Put, UseGuards, Query, Body } from "@nestjs/common"
 import { InstallmentsService } from "./installments.service"
 import { CreateInstallmentDto } from "./dto/create-installment.dto"
+import { UpdateInstallmentDto } from "./dto/update-installment.dto"
 import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guard"
 import { RolesGuard } from "../../auth/guards/roles.guard"
 import { Roles } from "../../auth/decorators/roles.decorator"
@@ -30,6 +31,11 @@ export class InstallmentsController {
   @Put(":id/pay-off-early")
   payOffEarly(@Param('id') id: string, @CurrentUser() user: any) {
     return this.installmentsService.payOffEarly(Number(id), user.storeId)
+  }
+
+  @Put(":id")
+  update(@Param('id') id: string, @Body() updateInstallmentDto: UpdateInstallmentDto, @CurrentUser() user: any) {
+    return this.installmentsService.update(Number(id), updateInstallmentDto, user.storeId)
   }
 
   @Get(":id/payments")

@@ -41,4 +41,9 @@ export class CreateInstallmentDto {
 
   @IsString()
   customerId: number
+
+  @IsInt()
+  @IsPositive()
+  @Type(() => Number)
+  managerId: number
 }

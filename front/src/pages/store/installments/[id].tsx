@@ -438,6 +438,16 @@ export default function InstallmentDetailPage() {
         </Card>
       </div>
 
+      {/* В блоке с деталями рассрочки */}
+      <div className="flex flex-col gap-2">
+        <div>
+          <span className="font-medium">Менеджер: </span>
+          {installment?.data?.manager?.fullname ||
+            installment?.data?.manager?.login ||
+            '-'}
+        </div>
+      </div>
+
       {/* Actions */}
       {/* Кнопка досрочного погашения теперь в header, блок ниже можно удалить или оставить только Alert для просрочек */}
       {installment?.data?.status === 'active' && hasOverdue && (
