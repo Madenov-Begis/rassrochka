@@ -32,6 +32,11 @@ export class CreateCustomerDto {
   phone: string
 
   @IsString()
+  @IsOptional()
+  address?: string
+
+  @IsString()
   @IsNotEmpty()
-  address: string
+  @Matches(/^998\d{9}$/, { message: 'Дополнительный телефон должен быть в формате +998XXXXXXXXX' })
+  additionalPhoneNumber: string
 }

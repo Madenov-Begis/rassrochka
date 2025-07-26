@@ -20,4 +20,9 @@ export class UpdateCustomerDto extends PartialType(CreateCustomerDto) {
   @Transform(({ value }) => value?.toUpperCase())
   @Matches(/^[A-Z]{2}$/, { message: 'Серия паспорта: 2 латинские заглавные буквы' })
   passportSeries?: string;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^998\d{9}$/, { message: 'Дополнительный телефон должен быть в формате +998XXXXXXXXX' })
+  additionalPhoneNumber?: string;
 } 

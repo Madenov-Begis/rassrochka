@@ -37,7 +37,8 @@ interface ClientRow {
   passportSeries: string;
   passportNumber: string;
   phone: string;
-  address: string;
+  additionalPhoneNumber: string;
+  address?: string;
 }
 
 interface InstallmentRow {
@@ -46,17 +47,21 @@ interface InstallmentRow {
   customerMiddleName?: string;
   passportSeries: string;
   passportNumber: string;
+  customerPhone: string;
+  customerAdditionalPhoneNumber: string;
+  customerAddress?: string;
   productName: string;
   productPrice: number;
   downPayment: number;
   interestRate: number;
   months: number;
   createdAt: string;
+  managerLogin: string;
 }
 
 @Injectable()
 export class ImportService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async importClients(file: MulterFile, storeId: number): Promise<ImportResult> {
     const workbook = new ExcelJS.Workbook();
@@ -70,7 +75,7 @@ export class ImportService {
     const result: ImportResult = {
       total: 0,
       success: 0,
-      errors: []
+      errors: [],
     };
 
     // Пропускаем заголовок
@@ -92,7 +97,7 @@ export class ImportService {
       } catch (error) {
         result.errors.push({
           row: rowNumber,
-          errors: Array.isArray(error.message) ? error.message : [error.message]
+          errors: Array.isArray(error.message) ? error.message : [error.message],
         });
       }
     }
@@ -112,29 +117,28 @@ export class ImportService {
     const result: ImportResult = {
       total: 0,
       success: 0,
-      errors: []
+      errors: [],
     };
 
-    // Пропускаем заголовок
     const rows = worksheet.getRows(2, worksheet.rowCount - 1) || [];
     result.total = rows.length;
+
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      if (row.values.length == 0) {
+      if (row.values.length === 0) {
         continue;
       }
       const rowNumber = i + 2;
 
       try {
-        const installmentData = this.parseInstallmentRow(row);
-        await this.validateInstallmentData(installmentData, storeId);
-        await this.createInstallment(installmentData, storeId);
+        await this.createInstallmentWithCustomer(row, storeId);
         result.success++;
       } catch (error) {
-        console.log(error)
+        console.log(error);
+        const messages = error.message ? error.message.split('; ') : ['Неизвестная ошибка'];
         result.errors.push({
           row: rowNumber,
-          errors: Array.isArray(error.message) ? error.message : [error.message]
+          errors: messages,
         });
       }
     }
@@ -146,23 +150,35 @@ export class ImportService {
     const cells = row.values as any[];
 
     return {
-      firstName: this.getStringValue(cells[1]),
-      lastName: this.getStringValue(cells[2]),
-      middleName: this.getStringValue(cells[3]) || undefined,
-      passportSeries: this.getStringValue(cells[4]),
-      passportNumber: this.getStringValue(cells[5]),
-      phone: this.getStringValue(cells[6]),
-      address: this.getStringValue(cells[7]),
+      firstName: this.getRequiredStringValue(cells[1]),
+      lastName: this.getRequiredStringValue(cells[2]),
+      middleName: this.getOptionalStringValue(cells[3]),
+      passportSeries: this.getRequiredStringValue(cells[4]),
+      passportNumber: this.getRequiredStringValue(cells[5]),
+      phone: this.getRequiredStringValue(cells[6]),
+      additionalPhoneNumber: this.getRequiredStringValue(cells[7]),
+      address: this.getOptionalStringValue(cells[8]),
     };
   }
 
-  private getStringValue(value: any): string {
+  private getRequiredStringValue(value: any): string {
     if (value === null || value === undefined) {
       throw new Error('Поле обязательно для заполнения');
     }
     const str = String(value).trim();
     if (!str) {
       throw new Error('Поле не может быть пустым');
+    }
+    return str;
+  }
+
+  private getOptionalStringValue(value: any): string | undefined {
+    if (value === null || value === undefined) {
+      return undefined;
+    }
+    const str = String(value).trim();
+    if (!str) {
+      return undefined;
     }
     return str;
   }
@@ -229,17 +245,21 @@ export class ImportService {
     const cells = row.values as any[];
 
     return {
-      customerFirstName: this.getStringValue(cells[1]),
-      customerLastName: this.getStringValue(cells[2]),
-      customerMiddleName: this.getStringValue(cells[3]) || undefined,
-      passportSeries: this.getStringValue(cells[4]),
-      passportNumber: this.getStringValue(cells[5]),
-      productName: this.getStringValue(cells[6]),
-      productPrice: this.getNumberValue(cells[7]),
-      downPayment: this.getNumberValue(cells[8]),
-      interestRate: this.getNumberValue(cells[9]),
-      months: this.getNumberValue(cells[10]),
-      createdAt: this.getDateValue(cells[11]).toISOString()
+      customerFirstName: this.getRequiredStringValue(cells[1]),
+      customerLastName: this.getRequiredStringValue(cells[2]),
+      customerMiddleName: this.getOptionalStringValue(cells[3]),
+      passportSeries: this.getRequiredStringValue(cells[4]),
+      passportNumber: this.getRequiredStringValue(cells[5]),
+      customerPhone: this.getRequiredStringValue(cells[6]),
+      customerAdditionalPhoneNumber: this.getRequiredStringValue(cells[7]),
+      customerAddress: this.getOptionalStringValue(cells[8]),
+      productName: this.getRequiredStringValue(cells[9]),
+      productPrice: this.getNumberValue(cells[10]),
+      downPayment: this.getNumberValue(cells[11]),
+      interestRate: this.getNumberValue(cells[12]),
+      months: this.getNumberValue(cells[13]),
+      createdAt: this.getDateValue(cells[14]).toISOString(),
+      managerLogin: this.getRequiredStringValue(cells[15]),
     };
   }
 
@@ -252,12 +272,15 @@ export class ImportService {
     if (!data.passportSeries) errors.push('Серия паспорта обязательна');
     if (!data.passportNumber) errors.push('Номер паспорта обязателен');
     if (!data.phone) errors.push('Телефон обязателен');
-    if (!data.address) errors.push('Адрес обязателен');
+    if (!data.additionalPhoneNumber) errors.push('Дополнительный телефон обязателен');
 
     // Проверка формата телефона
     const phoneRegex = /998\d{9}$/;
     if (data.phone && data.phone.trim() !== '' && !phoneRegex.test(data.phone)) {
       errors.push('Неверный формат телефона (должен быть 998XXXXXXXXX)');
+    }
+    if (data.additionalPhoneNumber && data.additionalPhoneNumber.trim() !== '' && !phoneRegex.test(data.additionalPhoneNumber)) {
+      errors.push('Неверный формат дополнительного телефона (должен быть 998XXXXXXXXX)');
     }
 
     // Проверка уникальности паспорта
@@ -265,54 +288,13 @@ export class ImportService {
       where: {
         passportSeries_passportNumber: {
           passportSeries: data.passportSeries,
-          passportNumber: data.passportNumber
-        }
-      }
+          passportNumber: data.passportNumber,
+        },
+      },
     });
 
     if (existingCustomer) {
       errors.push('Клиент с таким паспортом уже существует');
-    }
-
-    if (errors.length > 0) {
-      throw new Error(errors.join('; '));
-    }
-  }
-
-  private async validateInstallmentData(data: InstallmentRow, storeId: number): Promise<void> {
-    const errors: string[] = [];
-
-    // Проверка обязательных полей
-    if (!data.customerFirstName) errors.push('Имя клиента обязательно');
-    if (!data.customerLastName) errors.push('Фамилия клиента обязательна');
-    if (!data.passportSeries) errors.push('Серия паспорта обязательна');
-    if (!data.passportNumber) errors.push('Номер паспорта обязателен');
-    if (!data.productName) errors.push('Название товара обязательно');
-    if (data.productPrice <= 0) errors.push('Цена товара должна быть больше 0');
-    if (data.downPayment < 0) errors.push('Первоначальный взнос не может быть отрицательным');
-    if (data.interestRate < 0) errors.push('Процентная ставка не может быть отрицательной');
-    if (data.months <= 0) errors.push('Срок должен быть больше 0');
-    if (!data.createdAt) errors.push('Дата создания обязательна');
-
-    // Проверка логики
-    if (data.downPayment >= data.productPrice) {
-      errors.push('Первоначальный взнос не может быть больше или равен цене товара');
-    }
-
-    // Поиск клиента
-    const customer = await this.prisma.customer.findUnique({
-      where: {
-        passportSeries_passportNumber: {
-          passportSeries: data.passportSeries,
-          passportNumber: data.passportNumber
-        }
-      }
-    });
-
-    if (!customer) {
-      errors.push('Клиент с таким паспортом не найден');
-    } else if (customer.storeId !== storeId) {
-      errors.push('Клиент принадлежит другому магазину');
     }
 
     if (errors.length > 0) {
@@ -329,82 +311,138 @@ export class ImportService {
         passportSeries: data.passportSeries,
         passportNumber: data.passportNumber,
         phone: data.phone,
+        additionalPhoneNumber: data.additionalPhoneNumber,
         address: data.address,
         storeId: storeId,
-        isBlacklisted: false
-      }
+        isBlacklisted: false,
+      },
     });
   }
 
-  private async createInstallment(data: InstallmentRow, storeId: number): Promise<void> {
-    // Находим клиента
-    const customer = await this.prisma.customer.findUnique({
-      where: {
-        passportSeries_passportNumber: {
-          passportSeries: data.passportSeries,
-          passportNumber: data.passportNumber
-        }
-      }
-    });
+  private async createInstallmentWithCustomer(row: ExcelJS.Row, storeId: number): Promise<void> {
+    const data = this.parseInstallmentRow(row);
 
-    if (!customer) {
-      throw new Error('Клиент не найден');
-    }
-
-    // Рассчитываем параметры рассрочки
-    const base = data.productPrice - data.downPayment;
-    const totalAmount = base * (1 + data.interestRate / 100);
-    const monthlyPayment = totalAmount / data.months;
-
-    // Создаем рассрочку
-    const installment = await this.prisma.installment.create({
-      data: {
-        productName: data.productName,
-        productPrice: new Decimal(data.productPrice),
-        downPayment: new Decimal(data.downPayment),
-        interestRate: new Decimal(data.interestRate),
-        months: data.months,
-        totalAmount: new Decimal(totalAmount),
-        monthlyPayment: new Decimal(monthlyPayment),
-        status: 'active',
-        customerId: customer.id,
-        storeId: storeId,
-        createdAt: new Date(data.createdAt)
-      }
-    });
-
-    // Создаем график платежей
-    const payments: Array<{
-      amount: Decimal;
-      dueDate: Date;
-      status: PaymentStatus;
-      installmentId: number;
-    }> = [];
-    const today = new Date(data.createdAt)
-
-    for (let i = 1; i <= data.months; i++) {
-      const dueDate = new Date(today);
-      dueDate.setMonth(today.getMonth() + i);
-
-      let status;
-      const currentDate = new Date()
-
-      if (dueDate < currentDate) {
-        status = PaymentStatus.overdue
-      } else {
-        status = PaymentStatus.pending
-      }
-
-      payments.push({
-        amount: new Decimal(monthlyPayment),
-        dueDate: dueDate,
-        status,
-        installmentId: installment.id
+    await this.prisma.$transaction(async (tx) => {
+      let customer = await tx.customer.findUnique({
+        where: {
+          passportSeries_passportNumber: {
+            passportSeries: data.passportSeries,
+            passportNumber: data.passportNumber,
+          },
+        },
       });
-    }
 
-    await this.prisma.payment.createMany({
-      data: payments
+      if (customer) {
+        if (customer.storeId !== storeId) {
+          throw new Error('Клиент принадлежит другому магазину');
+        }
+      } else {
+        const customerErrors: string[] = [];
+        if (!data.customerFirstName) customerErrors.push('Имя клиента обязательно');
+        if (!data.customerLastName) customerErrors.push('Фамилия клиента обязательна');
+        if (!data.passportSeries) customerErrors.push('Серия паспорта обязательна');
+        if (!data.passportNumber) customerErrors.push('Номер паспорта обязателен');
+        if (!data.customerPhone) customerErrors.push('Телефон клиента обязателен');
+        if (!data.customerAdditionalPhoneNumber) customerErrors.push('Дополнительный телефон клиента обязателен');
+
+        const phoneRegex = /998\d{9}$/;
+        if (data.customerPhone && !phoneRegex.test(data.customerPhone)) {
+          customerErrors.push('Неверный формат телефона (должен быть 998XXXXXXXXX)');
+        }
+        if (data.customerAdditionalPhoneNumber && !phoneRegex.test(data.customerAdditionalPhoneNumber)) {
+          customerErrors.push('Неверный формат дополнительного телефона (должен быть 998XXXXXXXXX)');
+        }
+        if (customerErrors.length > 0) {
+          throw new Error(customerErrors.join('; '));
+        }
+
+        customer = await tx.customer.create({
+          data: {
+            firstName: data.customerFirstName,
+            lastName: data.customerLastName,
+            middleName: data.customerMiddleName,
+            passportSeries: data.passportSeries,
+            passportNumber: data.passportNumber,
+            phone: data.customerPhone,
+            additionalPhoneNumber: data.customerAdditionalPhoneNumber,
+            address: data.customerAddress,
+            storeId: storeId,
+            isBlacklisted: false,
+          },
+        });
+      }
+
+      const installmentErrors: string[] = [];
+      if (!data.productName) installmentErrors.push('Название товара обязательно');
+      if (data.productPrice <= 0) installmentErrors.push('Цена товара должна быть больше 0');
+      if (data.downPayment < 0) installmentErrors.push('Первоначальный взнос не может быть отрицательным');
+      if (data.interestRate < 0) installmentErrors.push('Процентная ставка не может быть отрицательной');
+      if (data.months <= 0) installmentErrors.push('Срок должен быть больше 0');
+      if (!data.createdAt) installmentErrors.push('Дата создания обязательна');
+      if (!data.managerLogin) installmentErrors.push('Логин менеджера обязателен');
+      if (data.downPayment >= data.productPrice) {
+        installmentErrors.push('Первоначальный взнос не может быть больше или равен цене товара');
+      }
+      if (installmentErrors.length > 0) {
+        throw new Error(installmentErrors.join('; '));
+      }
+
+      const manager = await tx.user.findUnique({
+        where: {
+          login: data.managerLogin,
+        },
+      });
+
+      if (!manager) {
+        throw new Error(`Менеджер с логином ${data.managerLogin} не найден`);
+      }
+
+      const base = data.productPrice - data.downPayment;
+      const totalAmount = base * (1 + data.interestRate / 100);
+      const monthlyPayment = totalAmount / data.months;
+
+      const installment = await tx.installment.create({
+        data: {
+          productName: data.productName,
+          productPrice: new Decimal(data.productPrice),
+          downPayment: new Decimal(data.downPayment),
+          interestRate: new Decimal(data.interestRate),
+          months: data.months,
+          totalAmount: new Decimal(totalAmount),
+          monthlyPayment: new Decimal(monthlyPayment),
+          status: 'active',
+          customerId: customer.id,
+          storeId: storeId,
+          createdAt: new Date(data.createdAt),
+          managerId: manager.id,
+        },
+      });
+
+      const payments: Array<{
+        amount: Decimal;
+        dueDate: Date;
+        status: PaymentStatus;
+        installmentId: number;
+      }> = [];
+      const startDate = new Date(data.createdAt);
+
+      for (let i = 1; i <= data.months; i++) {
+        const dueDate = new Date(startDate);
+        dueDate.setMonth(startDate.getMonth() + i);
+
+        const status = PaymentStatus.pending;
+
+        payments.push({
+          amount: new Decimal(monthlyPayment),
+          dueDate: dueDate,
+          status,
+          installmentId: installment.id,
+        });
+      }
+
+      await this.prisma.payment.createMany({
+        data: payments,
+      });
     });
   }
-} 
+}

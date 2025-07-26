@@ -28,6 +28,7 @@ export class CustomersService {
           { lastName: { contains: search, mode: "insensitive" } },
           { middleName: { contains: search, mode: "insensitive" } },
           { phone: { contains: search } },
+          { additionalPhoneNumber: { contains: search } },
           { passportSeries: { contains: search } },
           { passportNumber: { contains: search } },
         ],
@@ -170,11 +171,12 @@ export class CustomersService {
         lastName: true,
         middleName: true,
         phone: true,
+        additionalPhoneNumber: true,
       },
     })
     return customers.map(c => ({
       id: c.id,
-      fullname: [c.lastName, c.firstName, c.middleName, c.phone].filter(Boolean).join(' '),
+      fullname: [c.lastName, c.firstName, c.middleName, c.phone, c.additionalPhoneNumber].filter(Boolean).join(' '),
     }))
   }
 }

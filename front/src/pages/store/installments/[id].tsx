@@ -26,6 +26,8 @@ import type { Installment } from '@/types/store/installments';
 import type { Payment } from '@/types/store/payments';
 import { PaymentTimelineItem } from '@/components/forms/PaymentTimelineItem';
 import { InputAmount } from '@/components/ui/input-amount';
+import { useAuthStore } from '@/store/auth-store';
+import { adminApi } from '@/services/api';
 
 export default function InstallmentDetailPage() {
   const { id } = useParams();
@@ -100,6 +102,15 @@ export default function InstallmentDetailPage() {
       </Badge>
     );
   };
+
+  // Получение менеджеров для возможного редактирования (если потребуется)
+  const { user } = useAuthStore();
+  const storeId = user?.storeId;
+  const { data: managers } = useQuery({
+    queryKey: ['store-managers', storeId],
+    queryFn: () => storeId ? adminApi.getStoreUsers(storeId) : Promise.resolve({ data: [] }),
+    enabled: !!storeId,
+  });
 
   if (isLoading) {
     return (
@@ -442,9 +453,7 @@ export default function InstallmentDetailPage() {
       <div className="flex flex-col gap-2">
         <div>
           <span className="font-medium">Менеджер: </span>
-          {installment?.data?.manager?.fullname ||
-            installment?.data?.manager?.login ||
-            '-'}
+          {installment?.manager?.fullname || installment?.manager?.login || '-'}
         </div>
       </div>
 

@@ -46,7 +46,8 @@ model Customer {
   passportSeries String
   passportNumber String
   phone          String
-  address        String
+  additionalPhoneNumber String
+  address        String?
   isBlacklisted  Boolean       @default(false)
   storeId        Int
   createdAt      DateTime      @default(now())
@@ -75,7 +76,7 @@ model Installment {
   updatedAt      DateTime          @updatedAt
   customer       Customer          @relation(fields: [customerId], references: [id])
   store          Store             @relation(fields: [storeId], references: [id])
-  manager        User?             @relation(fields: [managerId], references: [id])
+  manager        User?              @relation(fields: [managerId], references: [id])
   payments       Payment[]
 
   @@map("installments")

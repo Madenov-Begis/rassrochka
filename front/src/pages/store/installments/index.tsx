@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Eye, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,15 +23,13 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { installmentsApi } from '@/services/api';
 import { Pagination as ServerPagination } from '@/components/pagination';
-import type {
-  ApiResponse,
-  ApiError,
-  PaginatedApiResponse,
-} from '@/types/api-response';
-import type { Installment, StoreManager } from '@/types/store/installments';
+import type { PaginatedApiResponse, ApiError } from '@/types/api-response';
+import type { Installment } from '@/types/store/installments';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useNavigate } from 'react-router-dom';
 import { ImportModal } from '@/components/forms/import-modal';
+import { useAuthStore } from '@/store/auth-store';
+import { adminApi } from '@/services/api';
 
 export default function InstallmentsPage() {
   const [search, setSearch] = useState('');
@@ -40,30 +38,24 @@ export default function InstallmentsPage() {
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
   const [isImportOpen, setIsImportOpen] = useState(false);
-
-  const [managerId, setManagerId] = useState<number | null>(null);
-
-  const { data: managers } = useQuery<ApiResponse<StoreManager[]>, ApiError>({
-    queryKey: ['store-managers'],
-    queryFn: installmentsApi.getStoreUsers,
+  const { user } = useAuthStore();
+  const storeId = user?.storeId;
+  const [managerId, setManagerId] = useState<number | undefined>(undefined);
+  const { data: managers } = useQuery({
+    queryKey: ['store-managers', storeId],
+    queryFn: () => storeId ? adminApi.getStoreUsers(storeId) : Promise.resolve({ data: [] }),
+    enabled: !!storeId,
   });
 
   const { data: installments, isLoading } = useQuery<
     PaginatedApiResponse<Installment[]>,
     ApiError
   >({
-    queryKey: [
-      'installments',
-      { search: debouncedValue, status, page, managerId },
-    ],
+    queryKey: ['installments', { search: debouncedValue, status, page, managerId }],
     queryFn: () =>
-      installmentsApi.getAll({
-        search: debouncedValue,
-        status,
-        page,
-        ...(managerId && { managerId }),
-      }),
+      installmentsApi.getAll({ search: debouncedValue, status, page, managerId }),
   });
+
 
   const getStatusBadge = (status: string) => {
     const config = {
@@ -106,17 +98,10 @@ export default function InstallmentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold">
-            Рассрочки
-          </h1>
-          <p className="text-xs sm:text-sm md:text-base text-gray-600">
-            Управление рассрочками магазина
-          </p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold">Рассрочки</h1>
+          <p className="text-xs sm:text-sm md:text-base text-gray-600">Управление рассрочками магазина</p>
         </div>
-        <Button
-          className="gap-1 sm:gap-2 p-2 sm:px-4 sm:py-2"
-          onClick={() => navigate('create')}
-        >
+        <Button className="gap-1 sm:gap-2 p-2 sm:px-4 sm:py-2" onClick={() => navigate('create')}>
           <Plus className="h-4 w-4" />
           <span className="sm:inline">Новая рассрочка</span>
         </Button>
@@ -125,17 +110,11 @@ export default function InstallmentsPage() {
       {/* Additional Actions */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg md:text-2xl">
-            Дополнительные действия
-          </CardTitle>
+          <CardTitle className="text-lg md:text-2xl">Дополнительные действия</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setIsImportOpen(true)}
-              className="flex-1"
-            >
+            <Button variant="outline" onClick={() => setIsImportOpen(true)} className="flex-1">
               <Plus className="h-4 w-4 mr-2" />
               Импорт рассрочек
             </Button>
@@ -181,24 +160,21 @@ export default function InstallmentsPage() {
                 <SelectItem value="early_payoff">Досрочные</SelectItem>
               </SelectContent>
             </Select>
-
+            {/* Фильтр по менеджеру */}
             <div className="flex gap-2 items-center">
-              <Select
-                onValueChange={(value) =>
-                  setManagerId(value ? Number(value) : null)
-                }
-              >
+              {/* <Select onValueChange={(value) => setManagerId(value ? Number(value) : undefined)}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Все менеджеры" />
                 </SelectTrigger>
                 <SelectContent>
-                  {managers?.data?.map((manager: StoreManager) => (
+                  <SelectItem value="">Все менеджеры</SelectItem>
+                  {managers?.data?.filter((m: any) => m.role === 'store_manager').map((manager: any) => (
                     <SelectItem key={manager.id} value={manager.id.toString()}>
-                      {manager.login}
+                      {manager.fullname || manager.login}
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </Select> */}
             </div>
           </div>
         </CardContent>
@@ -207,9 +183,7 @@ export default function InstallmentsPage() {
       {/* Installments Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg md:text-2xl">
-            Список рассрочек
-          </CardTitle>
+          <CardTitle className="text-lg md:text-2xl">Список рассрочек</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto -mx-2 sm:mx-0">
@@ -218,14 +192,11 @@ export default function InstallmentsPage() {
                 <TableRow>
                   <TableHead className="whitespace-nowrap">Товар</TableHead>
                   <TableHead className="whitespace-nowrap">Клиент</TableHead>
-                  <TableHead className="whitespace-nowrap">Телефон</TableHead>
                   <TableHead className="whitespace-nowrap">Сумма</TableHead>
-                  <TableHead className="whitespace-nowrap">Платежи</TableHead>
-                  <TableHead className="whitespace-nowrap">
-                    Дата оформления
-                  </TableHead>
-                  <TableHead className="whitespace-nowrap">Менеджер</TableHead>
                   <TableHead className="whitespace-nowrap">Статус</TableHead>
+                  <TableHead className="whitespace-nowrap">Дата оформления</TableHead>
+                  <TableHead className="whitespace-nowrap">Менеджер</TableHead>
+                  <TableHead className="whitespace-nowrap">Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -237,45 +208,49 @@ export default function InstallmentsPage() {
                   </TableRow>
                 ) : (
                   installments?.data?.items?.map((installment: Installment) => (
-                    <TableRow
-                      key={installment.id}
-                      onClick={() =>
-                        navigate(`/store/installments/${installment.id}`)
-                      }
-                      className="cursor-pointer"
-                    >
-                      <TableCell>{installment.productName}</TableCell>
-                      <TableCell className="font-semibold">
+                    <TableRow key={installment.id}>
+                      <TableCell className="font-medium">
+                        {installment.productName}
+                      </TableCell>
+                      <TableCell>
                         {installment.customer.firstName}{' '}
                         {installment.customer.lastName}
                       </TableCell>
                       <TableCell>
-                        {installment.customer.phone}
-                      </TableCell>
-                      <TableCell>
-                        {Number(installment.totalAmount).toLocaleString(
-                          'ru-RU',
-                          {
-                            maximumFractionDigits: 0,
-                          },
-                        )}{' '}
+                        {Number(installment.totalAmount).toLocaleString('ru-RU', {
+                          maximumFractionDigits: 0,
+                        })}{' '}
                         UZS
                       </TableCell>
-                      <TableCell className="font-semibold">
+                      <TableCell>
                         {Number(installment.monthlyPayment).toLocaleString(
                           'ru-RU',
                           { maximumFractionDigits: 0 },
                         )}{' '}
                         UZS
                       </TableCell>
+                      <TableCell>{getStatusBadge(installment.status)}</TableCell>
                       <TableCell>
                         {new Date(installment.createdAt).toLocaleDateString()}
                       </TableCell>
+                      <TableCell>{installment.manager?.fullname || installment.manager?.login || '-'}</TableCell>
                       <TableCell>
-                        {installment.manager?.login}
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(installment.status)}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              navigate(`/store/installments/${installment.id}`)
+                            }
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {installment.status === 'active' && (
+                            <Button variant="ghost" size="sm">
+                              <DollarSign className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

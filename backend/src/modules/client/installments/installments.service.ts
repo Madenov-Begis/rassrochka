@@ -1,66 +1,36 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
-import { CreateInstallmentDto } from './dto/create-installment.dto';
-import { Prisma } from '@prisma/client';
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common"
+import { PrismaService } from "../../../prisma/prisma.service"
+import { CreateInstallmentDto } from "./dto/create-installment.dto"
+import { Prisma } from "@prisma/client"
 
 @Injectable()
 export class InstallmentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+  ) {}
 
   async create(createInstallmentDto: CreateInstallmentDto, storeId: number) {
-    const {
-      productPrice,
-      downPayment,
-      interestRate,
-      months,
-      customerId,
-      managerId,
-    } = createInstallmentDto;
+    const { productPrice, downPayment, interestRate, months, customerId } = createInstallmentDto
 
     // Получаем клиента
-    const customer = await this.prisma.customer.findUnique({
-      where: { id: Number(customerId) },
-    });
-    if (!customer) throw new NotFoundException('Клиент не найден');
+    const customer = await this.prisma.customer.findUnique({ where: { id: Number(customerId) } })
+    if (!customer) throw new NotFoundException('Клиент не найден')
 
     // Проверка: если клиент в чёрном списке этого магазина — запретить оформление рассрочки
     if (customer.isBlacklisted && customer.storeId === storeId) {
-      throw new BadRequestException(
-        'Клиент в чёрном списке этого магазина, оформление рассрочки запрещено',
-      );
+      throw new BadRequestException('Клиент в чёрном списке этого магазина, оформление рассрочки запрещено')
     }
 
     // Расчет рассрочки (простые проценты)
     const base = productPrice - downPayment;
-    const totalInterest = (base * interestRate * months) / 100;
+    const totalInterest = base * interestRate * months / 100;
     const totalAmount = base + totalInterest;
     const monthlyPayment = totalAmount / months;
-
-    // Проверяем существование менеджера
-    const manager = await this.prisma.user.findUnique({
-      where: {
-        id: managerId,
-        storeId,
-        role: 'store_manager',
-        status: 'active',
-      },
-    });
-
-    if (!manager) {
-      throw new BadRequestException(
-        'Указанный менеджер не найден или неактивен',
-      );
-    }
 
     const installment = await this.prisma.installment.create({
       data: {
         ...createInstallmentDto,
         customerId: Number(customerId),
-        managerId: managerId,
         totalAmount: new Prisma.Decimal(totalAmount),
         monthlyPayment: new Prisma.Decimal(monthlyPayment),
         storeId,
@@ -68,52 +38,47 @@ export class InstallmentsService {
       include: {
         customer: true,
       },
-    });
+    })
 
     // Создание платежей
-    const payments: any[] = [];
-    const startDate = new Date();
+    const payments: any[] = []
+    const startDate = new Date()
 
     for (let i = 0; i < months; i++) {
-      const dueDate = new Date(startDate);
-      dueDate.setMonth(dueDate.getMonth() + i + 1);
+      const dueDate = new Date(startDate)
+      dueDate.setMonth(dueDate.getMonth() + i + 1)
 
       payments.push({
         amount: new Prisma.Decimal(monthlyPayment),
         dueDate,
         installmentId: installment.id,
-      });
+      })
     }
 
     await this.prisma.payment.createMany({
       data: payments,
-    });
+    })
 
-    return installment;
+    return installment
   }
 
   async findAll(storeId: number, query: any) {
-    let { status, search, page = 1, limit = 10, managerId } = query;
-    page = Number(page);
-    limit = Number(limit);
+    let { status, search, page = 1, limit = 10 } = query
+    page = Number(page)
+    limit = Number(limit)
 
-    const where: any = { storeId };
+    const where: any = { storeId }
 
     if (status && status !== 'all') {
-      where.status = status;
+      where.status = status
     }
 
     if (search) {
       where.OR = [
-        { productName: { contains: search, mode: 'insensitive' } },
-        { customer: { firstName: { contains: search, mode: 'insensitive' } } },
-        { customer: { lastName: { contains: search, mode: 'insensitive' } } },
-        { customer: { phone: { contains: search, mode: 'insensitive' } } },
-      ];
-    }
-
-    if (managerId && managerId !== 'null' && managerId !== 'undefined') {
-      where.managerId = Number(managerId);
+        { productName: { contains: search, mode: "insensitive" } },
+        { customer: { firstName: { contains: search, mode: "insensitive" } } },
+        { customer: { lastName: { contains: search, mode: "insensitive" } } },
+      ]
     }
 
     const [installments, total] = await Promise.all([
@@ -121,22 +86,16 @@ export class InstallmentsService {
         where: where as any,
         include: {
           customer: true,
-          manager: {
-            select: {
-              id: true,
-              login: true,
-            },
-          },
           payments: {
-            where: { status: 'overdue' },
+            where: { status: "overdue" },
           },
         },
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.installment.count({ where: where as any }),
-    ]);
+    ])
 
     return {
       items: installments,
@@ -144,7 +103,7 @@ export class InstallmentsService {
       page,
       limit,
       totalPages: Math.ceil(total / limit),
-    };
+    }
   }
 
   async findOne(id: number, storeId: number) {
@@ -152,124 +111,88 @@ export class InstallmentsService {
       where: { id, storeId },
       include: {
         customer: true,
-        manager: {
-          select: {
-            id: true,
-            login: true,
-          },
-        },
         payments: {
-          orderBy: { dueDate: 'asc' },
+          orderBy: { dueDate: "asc" },
         },
       },
-    });
+    })
 
     if (!installment) {
-      throw new NotFoundException('Installment not found');
+      throw new NotFoundException("Installment not found")
     }
 
-    return installment;
+    return installment
   }
 
   async update(id: number, updateInstallmentDto: any, storeId: number) {
     // Проверка, что рассрочка принадлежит магазину
-    const installment = await this.prisma.installment.findFirst({
-      where: { id, storeId },
-    });
-    if (!installment) {
-      throw new NotFoundException('Рассрочка не найдена');
-    }
+    const installment = await this.prisma.installment.findFirst({ where: { id, storeId } })
+    if (!installment) throw new NotFoundException('Installment not found')
 
-    // Если передан managerId — проверить, что он store_manager этого магазина и активен
+    // Если передан managerId — проверить, что он store_manager этого магазина
     if (updateInstallmentDto.managerId !== undefined) {
       const manager = await this.prisma.user.findFirst({
         where: {
           id: updateInstallmentDto.managerId,
           storeId,
           role: 'store_manager',
-          status: 'active',
         },
-      });
-
-      if (!manager) {
-        throw new BadRequestException(
-          'Менеджер не найден, неактивен или не принадлежит магазину',
-        );
-      }
+      })
+      if (!manager) throw new BadRequestException('Менеджер не найден или не принадлежит магазину')
     }
 
     // Обновить рассрочку
     return this.prisma.installment.update({
       where: { id },
       data: updateInstallmentDto,
-      include: {
-        customer: true,
-        manager: {
-          select: {
-            id: true,
-            login: true,
-          },
-        },
-      },
-    });
+    })
   }
 
   async payOffEarly(id: number, storeId: number) {
-    const installment = await this.findOne(id, storeId);
+    const installment = await this.findOne(id, storeId)
 
     // Проверка наличия просроченных платежей
     const overduePayments = await this.prisma.payment.findMany({
       where: {
         installmentId: id,
-        status: 'overdue',
+        status: "overdue",
       },
-    });
+    })
     if (overduePayments.length > 0) {
-      throw new Error('Сначала оплатите все просроченные платежи');
+      throw new Error('Сначала оплатите все просроченные платежи')
     }
 
     // Найти все неоплаченные платежи
-    const pendingPayments = installment.payments.filter(
-      (p) => p.status === 'pending',
-    );
-    const now = new Date();
+    const pendingPayments = installment.payments.filter(p => p.status === 'pending')
+    const now = new Date()
     // Проверка: если есть просроченные pending (по дате)
-    const hasLatePending = pendingPayments.some(
-      (p) => new Date(p.dueDate) < now,
-    );
+    const hasLatePending = pendingPayments.some(p => new Date(p.dueDate) < now)
     if (hasLatePending) {
-      throw new Error(
-        'Нельзя досрочно погасить рассрочку с просроченными платежами',
-      );
+      throw new Error('Нельзя досрочно погасить рассрочку с просроченными платежами')
     }
 
     // Основной долг
-    const base =
-      Number(installment.productPrice) - Number(installment.downPayment);
-    const months = Number(installment.months);
-    const principalPerMonth = base / months;
+    const base = Number(installment.productPrice) - Number(installment.downPayment)
+    const months = Number(installment.months)
+    const principalPerMonth = base / months
     // Сколько месяцев уже оплачено (по основному долгу)
-    const paidCount = installment.payments.filter(
-      (p) => p.status === 'paid',
-    ).length;
-    let remainingAmount = base - paidCount * principalPerMonth;
-    if (remainingAmount < 0) remainingAmount = 0;
+    const paidCount = installment.payments.filter(p => p.status === 'paid').length
+    let remainingAmount = base - paidCount * principalPerMonth
+    if (remainingAmount < 0) remainingAmount = 0
 
     // Сумма всех оплаченных платежей
-    const paidPayments = installment.payments.filter(
-      (p) => p.status === 'paid',
-    );
+    const paidPayments = installment.payments.filter(p => p.status === 'paid');
     const paidSum = paidPayments.reduce((sum, p) => sum + Number(p.amount), 0);
     // Новая общая сумма рассрочки: оплачено + сумма к досрочному погашению
     const newTotalAmount = paidSum + remainingAmount;
 
     // Отменяем все неоплаченные платежи
-    const pendingIds = pendingPayments.map((p) => p.id);
+    const pendingIds = pendingPayments.map(p => p.id)
     if (pendingIds.length > 0) {
       await this.prisma.payment.updateMany({
         where: { id: { in: pendingIds } },
-        data: { status: 'cancelled' },
-      });
+        data: { status: "cancelled" },
+      })
     }
 
     // Создаём платёж досрочного погашения
@@ -278,33 +201,32 @@ export class InstallmentsService {
         amount: new Prisma.Decimal(remainingAmount),
         dueDate: now,
         paidDate: now,
-        status: 'paid',
-        type: 'early_payoff',
+        status: "paid",
+        type: "early_payoff",
         installmentId: id,
       },
-    });
+    })
 
     // Обновляем статус и сумму рассрочки
     await this.prisma.installment.update({
       where: { id },
-      data: { status: 'early_payoff', totalAmount: newTotalAmount },
-    });
+      data: { status: "early_payoff", totalAmount: newTotalAmount },
+    })
 
     return {
       remainingAmount,
-      message:
-        'Installment can be closed early by paying only the principal for the remaining months (без процентов)',
+      message: "Installment can be closed early by paying only the principal for the remaining months (без процентов)",
       newTotalAmount,
-    };
+    }
   }
 
   async getPayments(id: number, storeId: number) {
-    await this.findOne(id, storeId); // Проверка доступа
+    await this.findOne(id, storeId) // Проверка доступа
 
     return this.prisma.payment.findMany({
       where: { installmentId: id },
-      orderBy: { dueDate: 'asc' },
+      orderBy: { dueDate: "asc" },
       include: { paymentHistory: true },
-    });
+    })
   }
 }
