@@ -46,7 +46,7 @@ model Customer {
   passportSeries String
   passportNumber String
   phone          String
-  additionalPhoneNumber String
+  additionalPhoneNumber String?
   address        String?
   isBlacklisted  Boolean       @default(false)
   storeId        Int
