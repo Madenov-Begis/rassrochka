@@ -16,20 +16,17 @@ import {
 
 interface PaginationProps {
   page: number;
-  total: number;
-  limit?: number;
+  totalPages: number;
   onPageChange: (page: number) => void;
   className?: string;
 }
 
 export const Pagination: React.FC<PaginationProps> = ({
   page,
-  total,
-  limit = 10,
+  totalPages,
   onPageChange,
   className,
 }) => {
-  const totalPages = Math.max(1, Math.ceil(total / limit));
 
   // if (totalPages <= 1) return null;
 

@@ -216,8 +216,7 @@ export default function CustomersPage() {
           </div>
           <ServerPagination
             page={page}
-            total={isSuccess ? customers.data.total : 0}
-            limit={10}
+            totalPages={isSuccess ? customers.data.totalPages : 1}
             onPageChange={setPage}
             className="flex justify-center mt-6"
           />

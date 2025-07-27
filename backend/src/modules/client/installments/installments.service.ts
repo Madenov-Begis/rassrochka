@@ -42,7 +42,7 @@ export class InstallmentsService {
 
     // Создание платежей
     const payments: any[] = []
-    const startDate = new Date()
+    const startDate = new Date(installment.createdAt) // Используем дату создания рассрочки
 
     for (let i = 0; i < months; i++) {
       const dueDate = new Date(startDate)
@@ -63,7 +63,7 @@ export class InstallmentsService {
   }
 
   async findAll(storeId: number, query: any) {
-    let { status, search, page = 1, limit = 10 } = query
+    let { status, search, page = 1, limit = 10, managerId } = query
     page = Number(page)
     limit = Number(limit)
 
@@ -73,11 +73,16 @@ export class InstallmentsService {
       where.status = status
     }
 
+    if (managerId) {
+      where.managerId = Number(managerId)
+    }
+
     if (search) {
       where.OR = [
         { productName: { contains: search, mode: "insensitive" } },
         { customer: { firstName: { contains: search, mode: "insensitive" } } },
         { customer: { lastName: { contains: search, mode: "insensitive" } } },
+        { customer: { phone: { contains: search, mode: "insensitive" } } },
       ]
     }
 
@@ -89,6 +94,12 @@ export class InstallmentsService {
           payments: {
             where: { status: "overdue" },
           },
+          manager: {
+            select: {
+              id: true,
+              login: true,
+            },
+          }
         },
         skip: (page - 1) * limit,
         take: limit,

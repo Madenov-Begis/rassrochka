@@ -37,7 +37,8 @@ export interface Payment {
       passportSeries: string
       passportNumber: string
       phone: string
-      address: string
+      additionalPhoneNumber?: string
+      address?: string
       isBlacklisted: boolean
       storeId: number
       createdAt: string

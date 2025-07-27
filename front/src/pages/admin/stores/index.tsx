@@ -51,7 +51,6 @@ export default function AdminStoresPage() {
 
   const stores = storesData?.data?.items || [];
   const totalStores = storesData?.data?.total || 0;
-  const limit = 10;
   const activeStores = stores.filter((store) => store.status === "active").length;
   const overdueStores = stores.filter((store) => store.status === "active").length;
 
@@ -223,8 +222,7 @@ export default function AdminStoresPage() {
         </Card>
         <ServerPagination
           page={page}
-          total={totalStores}
-          limit={limit}
+          totalPages={storesData?.data?.totalPages || 0}
           onPageChange={setPage}
           className="flex justify-center mt-6"
         />

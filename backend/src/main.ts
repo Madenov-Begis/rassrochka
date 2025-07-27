@@ -51,7 +51,7 @@ class GlobalHttpExceptionFilter implements ExceptionFilter {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: false,
+    logger: ['log', 'error', 'warn', 'debug', 'verbose'],
   })
   const configService = app.get(ConfigService)
   const logger = new Logger("Bootstrap")

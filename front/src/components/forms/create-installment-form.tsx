@@ -17,12 +17,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { installmentsApi, customersApi } from '@/services/api';
 import type { CustomerList } from '@/types/store/customers';
 import type { ApiResponse, ApiError } from '@/types/api-response';
-import type { InstallmentBody } from '@/types/store/installments';
+import type { InstallmentBody, StoreManager } from '@/types/store/installments';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { InputAmount } from '@/components/ui/input-amount';
-import { useAuthStore } from '@/store/auth-store';
-import { adminApi } from '@/services/api';
 
 interface CreateInstallmentFormProps {
   onSuccess: () => void;
@@ -85,12 +83,9 @@ export function CreateInstallmentForm({
     },
   });
 
-  const { user } = useAuthStore();
-  const storeId = user?.storeId;
-  const { data: managers } = useQuery({
-    queryKey: ['store-managers', storeId],
-    queryFn: () => storeId ? adminApi.getStoreUsers(storeId) : Promise.resolve({ data: [] }),
-    enabled: !!storeId,
+  const { data: managers } = useQuery<ApiResponse<StoreManager[]>>({
+    queryKey: ['store-managers'],
+    queryFn: installmentsApi.getStoreUsers,
   });
 
   const { data: customers } = useQuery<ApiResponse<CustomerList[]>, ApiError>({
@@ -295,15 +290,17 @@ export function CreateInstallmentForm({
                   <SelectValue placeholder="Выберите менеджера" />
                 </SelectTrigger>
                 <SelectContent>
-                  {managers?.data?.filter((m: any) => m.role === 'store_manager').map((manager: any) => (
+                  {managers?.data?.map((manager) => (
                     <SelectItem key={manager.id} value={manager.id.toString()}>
-                      {manager.fullname || manager.login}
+                      {manager.login}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {errors.managerId && (
-                <p className="text-sm text-red-600">{errors.managerId.message as string}</p>
+                <p className="text-sm text-red-600">
+                  {errors.managerId.message as string}
+                </p>
               )}
             </div>
             <div className="flex justify-end gap-2 pt-4">

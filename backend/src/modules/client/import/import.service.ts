@@ -63,7 +63,10 @@ interface InstallmentRow {
 export class ImportService {
   constructor(private prisma: PrismaService) {}
 
-  async importClients(file: MulterFile, storeId: number): Promise<ImportResult> {
+  async importClients(
+    file: MulterFile,
+    storeId: number,
+  ): Promise<ImportResult> {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(file.buffer);
 
@@ -97,7 +100,9 @@ export class ImportService {
       } catch (error) {
         result.errors.push({
           row: rowNumber,
-          errors: Array.isArray(error.message) ? error.message : [error.message],
+          errors: Array.isArray(error.message)
+            ? error.message
+            : [error.message],
         });
       }
     }
@@ -105,7 +110,10 @@ export class ImportService {
     return result;
   }
 
-  async importInstallments(file: MulterFile, storeId: number): Promise<ImportResult> {
+  async importInstallments(
+    file: MulterFile,
+    storeId: number,
+  ): Promise<ImportResult> {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(file.buffer);
 
@@ -135,7 +143,9 @@ export class ImportService {
         result.success++;
       } catch (error) {
         console.log(error);
-        const messages = error.message ? error.message.split('; ') : ['Неизвестная ошибка'];
+        const messages = error.message
+          ? error.message.split('; ')
+          : ['Неизвестная ошибка'];
         result.errors.push({
           row: rowNumber,
           errors: messages,
@@ -236,7 +246,9 @@ export class ImportService {
           }
         }
       }
-      throw new Error('Некорректный формат даты. Используйте формат DD.MM.YYYY или ISO');
+      throw new Error(
+        'Некорректный формат даты. Используйте формат DD.MM.YYYY или ISO',
+      );
     }
     return date;
   }
@@ -263,7 +275,10 @@ export class ImportService {
     };
   }
 
-  private async validateClientData(data: ClientRow, storeId: number): Promise<void> {
+  private async validateClientData(
+    data: ClientRow,
+    storeId: number,
+  ): Promise<void> {
     const errors: string[] = [];
 
     // Проверка обязательных полей
@@ -272,15 +287,26 @@ export class ImportService {
     if (!data.passportSeries) errors.push('Серия паспорта обязательна');
     if (!data.passportNumber) errors.push('Номер паспорта обязателен');
     if (!data.phone) errors.push('Телефон обязателен');
-    if (!data.additionalPhoneNumber) errors.push('Дополнительный телефон обязателен');
+    if (!data.additionalPhoneNumber)
+      errors.push('Дополнительный телефон обязателен');
 
     // Проверка формата телефона
     const phoneRegex = /998\d{9}$/;
-    if (data.phone && data.phone.trim() !== '' && !phoneRegex.test(data.phone)) {
+    if (
+      data.phone &&
+      data.phone.trim() !== '' &&
+      !phoneRegex.test(data.phone)
+    ) {
       errors.push('Неверный формат телефона (должен быть 998XXXXXXXXX)');
     }
-    if (data.additionalPhoneNumber && data.additionalPhoneNumber.trim() !== '' && !phoneRegex.test(data.additionalPhoneNumber)) {
-      errors.push('Неверный формат дополнительного телефона (должен быть 998XXXXXXXXX)');
+    if (
+      data.additionalPhoneNumber &&
+      data.additionalPhoneNumber.trim() !== '' &&
+      !phoneRegex.test(data.additionalPhoneNumber)
+    ) {
+      errors.push(
+        'Неверный формат дополнительного телефона (должен быть 998XXXXXXXXX)',
+      );
     }
 
     // Проверка уникальности паспорта
@@ -319,7 +345,10 @@ export class ImportService {
     });
   }
 
-  private async createInstallmentWithCustomer(row: ExcelJS.Row, storeId: number): Promise<void> {
+  private async createInstallmentWithCustomer(
+    row: ExcelJS.Row,
+    storeId: number,
+  ): Promise<void> {
     const data = this.parseInstallmentRow(row);
 
     await this.prisma.$transaction(async (tx) => {
@@ -338,19 +367,32 @@ export class ImportService {
         }
       } else {
         const customerErrors: string[] = [];
-        if (!data.customerFirstName) customerErrors.push('Имя клиента обязательно');
-        if (!data.customerLastName) customerErrors.push('Фамилия клиента обязательна');
-        if (!data.passportSeries) customerErrors.push('Серия паспорта обязательна');
-        if (!data.passportNumber) customerErrors.push('Номер паспорта обязателен');
-        if (!data.customerPhone) customerErrors.push('Телефон клиента обязателен');
-        if (!data.customerAdditionalPhoneNumber) customerErrors.push('Дополнительный телефон клиента обязателен');
+        if (!data.customerFirstName)
+          customerErrors.push('Имя клиента обязательно');
+        if (!data.customerLastName)
+          customerErrors.push('Фамилия клиента обязательна');
+        if (!data.passportSeries)
+          customerErrors.push('Серия паспорта обязательна');
+        if (!data.passportNumber)
+          customerErrors.push('Номер паспорта обязателен');
+        if (!data.customerPhone)
+          customerErrors.push('Телефон клиента обязателен');
+        if (!data.customerAdditionalPhoneNumber)
+          customerErrors.push('Дополнительный телефон клиента обязателен');
 
         const phoneRegex = /998\d{9}$/;
         if (data.customerPhone && !phoneRegex.test(data.customerPhone)) {
-          customerErrors.push('Неверный формат телефона (должен быть 998XXXXXXXXX)');
+          customerErrors.push(
+            'Неверный формат телефона (должен быть 998XXXXXXXXX)',
+          );
         }
-        if (data.customerAdditionalPhoneNumber && !phoneRegex.test(data.customerAdditionalPhoneNumber)) {
-          customerErrors.push('Неверный формат дополнительного телефона (должен быть 998XXXXXXXXX)');
+        if (
+          data.customerAdditionalPhoneNumber &&
+          !phoneRegex.test(data.customerAdditionalPhoneNumber)
+        ) {
+          customerErrors.push(
+            'Неверный формат дополнительного телефона (должен быть 998XXXXXXXXX)',
+          );
         }
         if (customerErrors.length > 0) {
           throw new Error(customerErrors.join('; '));
@@ -373,15 +415,24 @@ export class ImportService {
       }
 
       const installmentErrors: string[] = [];
-      if (!data.productName) installmentErrors.push('Название товара обязательно');
-      if (data.productPrice <= 0) installmentErrors.push('Цена товара должна быть больше 0');
-      if (data.downPayment < 0) installmentErrors.push('Первоначальный взнос не может быть отрицательным');
-      if (data.interestRate < 0) installmentErrors.push('Процентная ставка не может быть отрицательной');
+      if (!data.productName)
+        installmentErrors.push('Название товара обязательно');
+      if (data.productPrice <= 0)
+        installmentErrors.push('Цена товара должна быть больше 0');
+      if (data.downPayment < 0)
+        installmentErrors.push(
+          'Первоначальный взнос не может быть отрицательным',
+        );
+      if (data.interestRate < 0)
+        installmentErrors.push('Процентная ставка не может быть отрицательной');
       if (data.months <= 0) installmentErrors.push('Срок должен быть больше 0');
       if (!data.createdAt) installmentErrors.push('Дата создания обязательна');
-      if (!data.managerLogin) installmentErrors.push('Логин менеджера обязателен');
+      if (!data.managerLogin)
+        installmentErrors.push('Логин менеджера обязателен');
       if (data.downPayment >= data.productPrice) {
-        installmentErrors.push('Первоначальный взнос не может быть больше или равен цене товара');
+        installmentErrors.push(
+          'Первоначальный взнос не может быть больше или равен цене товара',
+        );
       }
       if (installmentErrors.length > 0) {
         throw new Error(installmentErrors.join('; '));
@@ -413,36 +464,69 @@ export class ImportService {
           status: 'active',
           customerId: customer.id,
           storeId: storeId,
+          managerId: manager.id, // Убираем опциональность, передаем прямо ID
           createdAt: new Date(data.createdAt),
-          managerId: manager.id,
         },
       });
 
-      const payments: Array<{
-        amount: Decimal;
-        dueDate: Date;
-        status: PaymentStatus;
-        installmentId: number;
-      }> = [];
+      console.log(`Created installment with ID: ${installment.id}`);
+
+      // Создаем платежи с правильными статусами (учитываем просроченные)
       const startDate = new Date(data.createdAt);
+      const currentDate = new Date();
 
       for (let i = 1; i <= data.months; i++) {
         const dueDate = new Date(startDate);
         dueDate.setMonth(startDate.getMonth() + i);
 
-        const status = PaymentStatus.pending;
+        // Определяем статус платежа: если дата платежа уже прошла - overdue, иначе pending
+        const paymentStatus =
+          dueDate < currentDate ? PaymentStatus.overdue : PaymentStatus.pending;
 
-        payments.push({
-          amount: new Decimal(monthlyPayment),
-          dueDate: dueDate,
-          status,
-          installmentId: installment.id,
-        });
+        try {
+          await tx.payment.create({
+            data: {
+              amount: new Decimal(monthlyPayment),
+              dueDate: dueDate,
+              status: paymentStatus, // Используем вычисленный статус
+              installmentId: installment.id,
+              type: 'ordinary',
+            },
+          });
+
+          console.log(
+            `Payment ${i}: dueDate=${dueDate.toISOString()}, status=${paymentStatus}`,
+          );
+        } catch (error) {
+          console.error(
+            `Error creating payment ${i} for installment ${installment.id}:`,
+            error,
+          );
+          throw new Error(`Ошибка создания платежа ${i}: ${error.message}`);
+        }
       }
 
-      await this.prisma.payment.createMany({
-        data: payments,
+      // Если есть просроченные платежи, меняем статус рассрочки на overdue
+      const hasOverduePayments = await tx.payment.count({
+        where: {
+          installmentId: installment.id,
+          status: PaymentStatus.overdue,
+        },
       });
+
+      if (hasOverduePayments > 0) {
+        await tx.installment.update({
+          where: { id: installment.id },
+          data: { status: 'overdue' },
+        });
+        console.log(
+          `Installment ${installment.id} status updated to overdue due to ${hasOverduePayments} overdue payments`,
+        );
+      }
+
+      console.log(
+        `Successfully created ${data.months} payments for installment ${installment.id}`,
+      );
     });
   }
 }

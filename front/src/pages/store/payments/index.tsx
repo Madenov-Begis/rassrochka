@@ -302,8 +302,7 @@ export default function StorePayments() {
               {/* Pagination */}
               <ServerPagination
                 page={page}
-                total={data?.data?.total || 0}
-                limit={limit}
+                totalPages={data?.data?.totalPages || 0}
                 onPageChange={setPage}
                 className="flex justify-center mt-6"
               />

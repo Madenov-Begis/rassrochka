@@ -36,11 +36,12 @@ export interface CustomerDetail {
   id: number;
   firstName: string;
   lastName: string;
-  middleName: string;
+  middleName?: string;
   passportSeries: string;
   passportNumber: string;
   phone: string;
-  address: string;
+  additionalPhoneNumber?: string;
+  address?: string;
   isBlacklisted: boolean;
   storeId: number;
   createdAt: string;

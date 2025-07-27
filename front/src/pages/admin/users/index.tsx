@@ -73,7 +73,6 @@ export default function AdminUsers() {
   });
 
   const users = data?.data?.items || [];
-  const total = data?.data?.total || 0;
 
   const getRoleBadge = (role: string) => {
     const roleConfig = {
@@ -226,8 +225,7 @@ export default function AdminUsers() {
 
       <Pagination
         page={page}
-        total={total}
-        limit={limit}
+        totalPages={data?.data?.totalPages || 0}
         onPageChange={setPage}
         className="flex justify-center mt-6"
       />

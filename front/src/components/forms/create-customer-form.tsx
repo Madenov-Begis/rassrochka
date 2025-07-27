@@ -163,10 +163,34 @@ export function CreateOrEditCustomerForm({ onSuccess,  initialValues, editMode }
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="address">Адрес *</Label>
+        <Label htmlFor="additionalPhoneNumber">Дополнительный номер телефона *</Label>
+        <Controller
+          name="additionalPhoneNumber"
+          control={control}
+          rules={{
+            required: "Дополнительный номер телефона обязателен",
+          }}
+          render={({ field }) => (
+            <PatternFormat
+              {...field}
+              format="998#########"
+              allowEmptyFormatting={true}
+              mask=" "
+              placeholder="998901234567"
+              customInput={Input}
+              disabled={mutation.isPending}
+              onValueChange={values => field.onChange(values.value ? `998${values.value}` : '')}
+            />
+          )}
+        />
+        {errors.additionalPhoneNumber && <p className="text-sm text-red-600">{errors.additionalPhoneNumber.message as string}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="address">Адрес</Label>
         <Input
           id="address"
-          {...register("address", { required: "Адрес обязателен" })}
+          {...register("address")}
           placeholder="г. Москва, ул. Ленина, д. 1, кв. 1"
         />
         {errors.address && <p className="text-sm text-red-600">{errors.address.message as string}</p>}

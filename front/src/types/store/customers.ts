@@ -8,7 +8,8 @@ export interface Customer {
   passportSeries: string
   passportNumber: string
   phone: string
-  address: string
+  additionalPhoneNumber?: string
+  address?: string
   isBlacklisted: boolean
   storeId: string
   createdAt: string
@@ -23,7 +24,8 @@ export interface CustomerBody {
   passportSeries: string
   passportNumber: string
   phone: string
-  address: string
+  additionalPhoneNumber: string
+  address?: string
 }
 
 export interface GlobalSearchPassport {
